@@ -5,18 +5,11 @@ Alle CRUD-Funktionen für Personen (Personalstammblatt)
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import sys
-import os
 
-# --- Importiere die bestehenden Module ---
-MODULE_PATH = Path(__file__).parent.parent / "Stammdaten-Projekt" / "modules"
-sys.path.append(str(MODULE_PATH))
-
-import dbms
-import person
+from modules import dbms, person
 
 # --- DB initialisieren ---
-DB_PATH = Path(__file__).parent.parent / "Stammdaten-Projekt" / "stammdatenverwaltung.db"
+DB_PATH = Path(__file__).parent.parent / "stammdatenverwaltung.db"
 db = dbms.dbms(str(DB_PATH))
 
 st.set_page_config(page_title="Stammdaten", page_icon="👤", layout="wide")

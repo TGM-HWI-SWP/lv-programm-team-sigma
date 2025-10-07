@@ -5,23 +5,17 @@ Mitarbeiter auswählen, Abrechnung anzeigen
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import sys
 import datetime as dt
 
-MODULE_PATH = Path(__file__).parent.parent / "Stammdaten-Projekt" / "modules"
-sys.path.append(str(MODULE_PATH))
+from modules import dbms, employee, Abrechnung
 
-import dbms
-import employee
-import Abrechnung
-
-DB_PATH = Path(__file__).parent.parent / "Stammdaten-Projekt" / "stammdatenverwaltung.db"
+DB_PATH = Path(__file__).parent.parent / "stammdatenverwaltung.db"
 db = dbms.dbms(str(DB_PATH))
 
 st.set_page_config(page_title="Lohnverrechnung", page_icon="💶", layout="wide")
 st.title("💶 Lohnverrechnung")
 
-mitarbeiter = employee.mitarbeiter.select_all(dbms=db)
+mitarbeiter = employee.mitarbeiter.select_all(dbms_obj=db)
 data = [m.value() for m in mitarbeiter]
 columns = [row[2] for row in employee.mitarbeiter.table_row_names[:-1]]
 df = pd.DataFrame(data, columns=columns)

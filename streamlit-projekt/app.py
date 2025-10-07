@@ -2,7 +2,17 @@ import streamlit as st
 from pathlib import Path
 import pandas as pd
 
+from modules import dbms, person, employee
+
 st.set_page_config(page_title="Team Sigma – Demo", page_icon=" ", layout="wide")
+
+# --- Datenbank initialisieren ---
+DB_PATH = Path(__file__).parent / "stammdatenverwaltung.db"
+db = dbms.dbms(str(DB_PATH))
+
+# Tabellen erstellen, falls nicht vorhanden
+person.person.initialize_db_table(db)
+employee.mitarbeiter.initialize_db_table(db)
 
 # --- Session State Defaults ---
 if "dataset" not in st.session_state:
@@ -33,10 +43,16 @@ with st.sidebar:
 st.subheader("Schnellstart")
 st.markdown(
     """
-     - Lade oben in der Sidebar eine Datei hoch.
-     - Wechsle zur Seite ** Analyse** für erste Auswertungen.
-     - In ** Einstellungen** kannst du Parameter anpassen.
-     """
+    📋 **Navigation:**
+    - **01 📊 Analyse** – Lade CSV/XLSX-Dateien hoch und analysiere Daten
+    - **02 ⚙️ Einstellungen** – Konfiguriere die Anwendung
+    - **03 👤 Stammdaten** – Verwalte Personen (Anlegen, Bearbeiten, Löschen)
+    - **04 🧑‍💼 Mitarbeiter** – Verwalte Mitarbeiter (CRUD-Operationen)
+    - **05 💶 Lohnverrechnung** – Führe Lohnabrechnungen durch
+    - **06 ✨ Extras** – PDF-Download, Datenbank-Reset, Hilfe
+    
+    💡 **Tipp:** Beginne mit **Stammdaten**, um Personen anzulegen, dann **Mitarbeiter** für die Zuordnung.
+    """
 )
 
 if st.session_state.df is not None:

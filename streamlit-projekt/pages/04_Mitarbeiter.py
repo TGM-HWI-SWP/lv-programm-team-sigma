@@ -5,23 +5,17 @@ Alle CRUD-Funktionen für Mitarbeiter
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import sys
 
-MODULE_PATH = Path(__file__).parent.parent / "Stammdaten-Projekt" / "modules"
-sys.path.append(str(MODULE_PATH))
+from modules import dbms, employee, person
 
-import dbms
-import employee
-import person
-
-DB_PATH = Path(__file__).parent.parent / "Stammdaten-Projekt" / "stammdatenverwaltung.db"
+DB_PATH = Path(__file__).parent.parent / "stammdatenverwaltung.db"
 db = dbms.dbms(str(DB_PATH))
 
 st.set_page_config(page_title="Mitarbeiter", page_icon="🧑‍💼", layout="wide")
 st.title("🧑‍💼 Mitarbeiterverwaltung")
 
 def load_mitarbeiter():
-    return employee.mitarbeiter.select_all(dbms=db)
+    return employee.mitarbeiter.select_all(dbms_obj=db)
 
 mitarbeiter = load_mitarbeiter()
 data = [m.value() for m in mitarbeiter]
