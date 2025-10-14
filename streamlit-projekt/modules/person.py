@@ -12,7 +12,7 @@ class person:
     id = 0
     table_name = "PERSON"
     table_row_names = [
-        ["PERS_ID", "integer PRIMARY KEY", "ID"],
+        ["PERS_ID", "integer NOT NULL", "ID"],
         ["PERS_SURNAME", "text NOT NULL", "Nachname"],
         ["PERS_FIRSTNAME", "text NOT NULL", "Vorname"],
         ["PERS_BIRTHDATE", "text NOT NULL", "Geburtsdatum"],
@@ -20,7 +20,10 @@ class person:
         ["PERS_HOUSENR", "integer", "Hausnummer"],
         ["PERS_FLOOR", "text", "Tür/Stockwerk"],
         ["PERS_ZIP", "integer", "PLZ"],
-        ["PERS_PLACE", "text", "Ort"]
+        ["PERS_PLACE", "text", "Ort"],
+        ["PERS_REC_ID", "integer NOT NULL PRIMARY KEY", "Record ID"],
+        ["PERS_SEX", "text", "Geschlecht"],
+        ["PERS_CHILDREN", "integer", "Anzahl Kinder"]
     ]
 
     @classmethod
@@ -46,11 +49,32 @@ class person:
         list_from_db, description = db_ms.select_all(table_name=cls.table_name)
         if list_from_db is None:
             return obj_list
-        for (persid, nachname, vorname, geburtsdatum, straße, hausnr, stiege, plz, ort) in list_from_db:
+        for row in list_from_db:
             try:
-                obj_list.append(person(id=int(persid), nachname=nachname, vorname=vorname, geburtsdatum=geburtsdatum, straße=straße, hausnr=hausnr, stiege_top_etc=stiege, plz=plz, ort=ort))
+                # Handle different column counts gracefully
+                if len(row) >= 9:
+                    persid, nachname, vorname, geburtsdatum, straße, hausnr, stiege, plz, ort = row[:9]
+                    # Extract additional fields if available
+                    rec_id = row[9] if len(row) > 9 else None
+                    sex = row[10] if len(row) > 10 else None
+                    children = row[11] if len(row) > 11 else None
+                    
+                    obj_list.append(person(
+                        id=int(persid), 
+                        nachname=nachname, 
+                        vorname=vorname, 
+                        geburtsdatum=geburtsdatum, 
+                        straße=straße, 
+                        hausnr=hausnr, 
+                        stiege_top_etc=stiege, 
+                        plz=plz, 
+                        ort=ort,
+                        rec_id=rec_id,
+                        sex=sex,
+                        children=children
+                    ))
             except Exception as e:
-                print("Problem during select all in person with id: ", persid, e, traceback.print_exc())
+                print("Problem during select all in person with id: ", row[0] if row else "unknown", e, traceback.print_exc())
         return obj_list
 
     @classmethod
@@ -68,21 +92,51 @@ class person:
 
         if list_from_db is None:
             return obj_list
-        for (persid, nachname, vorname, geburtsdatum, straße, hausnr, stiege, plz, ort) in list_from_db:
+        for row in list_from_db:
             try:
-                obj_list.append(person(id=int(persid), nachname=nachname, vorname=vorname, geburtsdatum=geburtsdatum, straße=straße, hausnr=hausnr, stiege_top_etc=stiege, plz=plz, ort=ort))
+                # Handle different column counts gracefully
+                if len(row) >= 9:
+                    persid, nachname, vorname, geburtsdatum, straße, hausnr, stiege, plz, ort = row[:9]
+                    # Extract additional fields if available
+                    rec_id = row[9] if len(row) > 9 else None
+                    sex = row[10] if len(row) > 10 else None
+                    children = row[11] if len(row) > 11 else None
+                    
+                    obj_list.append(person(
+                        id=int(persid), 
+                        nachname=nachname, 
+                        vorname=vorname, 
+                        geburtsdatum=geburtsdatum, 
+                        straße=straße, 
+                        hausnr=hausnr, 
+                        stiege_top_etc=stiege, 
+                        plz=plz, 
+                        ort=ort,
+                        rec_id=rec_id,
+                        sex=sex,
+                        children=children
+                    ))
             except:
-                print("Problem during sepecific selection in person")
+                print("Problem during specific selection in person")
 
         return obj_list
 
-    def __init__(self, vorname: str, nachname: str, geburtsdatum: str, id: int = None, straße: str = None, hausnr: int = None, stiege_top_etc: str = None, plz: int = None, ort: str = None) -> int:
+    def __init__(self, vorname: str, nachname: str, geburtsdatum: str, id: int = None, straße: str = None, hausnr: int = None, stiege_top_etc: str = None, plz: int = None, ort: str = None, rec_id: int = None, sex: str = None, children: int = None) -> int:
         """Erstellt ein Personenobjekt anhand der gegebenen Parameter
 
         Args:
             vorname (str): Vorname der Person
             nachname (str): Nachname der Person
-            alter (int): Alter der Person
+            geburtsdatum (str): Geburtsdatum der Person
+            id (int, optional): ID der Person
+            straße (str, optional): Straße
+            hausnr (int, optional): Hausnummer
+            stiege_top_etc (str, optional): Stiege/Top/etc
+            plz (int, optional): PLZ
+            ort (str, optional): Ort
+            rec_id (int, optional): Record ID (Primary Key)
+            sex (str, optional): Geschlecht
+            children (int, optional): Anzahl Kinder
         """
 
         if id is None:
@@ -98,6 +152,9 @@ class person:
         self.floor = stiege_top_etc
         self.zip = plz
         self.place = ort
+        self.rec_id = rec_id
+        self.sex = sex
+        self.children = children
 
     @property
     def birthdate(self):
@@ -124,7 +181,7 @@ class person:
         Returns:
             tuple: Anordnung der Attributswerte
         """
-        return (self.obj_id, self.surname, self.name, self.__birthdate, self.street, self.housenr, self.floor, self.zip, self.place)
+        return (self.obj_id, self.surname, self.name, self.__birthdate, self.street, self.housenr, self.floor, self.zip, self.place, self.rec_id, self.sex, self.children)
 
     def eval_age(self) -> int:
         """
@@ -143,9 +200,8 @@ class person:
 
         Args:
             dbms (dbms.dbms): Aktives DBMS
-            gui (gui.MyGUI): Aktive GUI zum Auslesen der eingegebenen Daten
         """
-        db_ms.insert(table_name=self.table_name, table_row_name=self.table_row_names, values=(self.obj_id, self.surname, self.name, self.birthdate, self.street, self.housenr, self.floor, self.zip, self.place))
+        db_ms.insert(table_name=self.table_name, table_row_name=self.table_row_names, values=(self.obj_id, self.surname, self.name, self.birthdate, self.street, self.housenr, self.floor, self.zip, self.place, self.rec_id, self.sex, self.children))
 
     def update(self, db_ms: dbms.dbms, values: tuple):
         """

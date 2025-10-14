@@ -15,6 +15,9 @@ class mitarbeiter(person.person):
         ["PERS_ID", "integer", "Personen-ID"],
         ["EMPL_ENTRYDATE", "text NOT NULL", "Eintrittsdatum"],
         ["EMPL_BRUTTOGEHALT", "integer NOT NULL", "Bruttogehalt"],
+        ["EMPL_EXITDATE", "text", "Austrittsdatum"],
+        ["EMPL_VALID_FROM", "text DEFAULT (datetime('now'))", "Gültig von"],
+        ["EMPL_VALID_TO", "text DEFAULT '2100-01-01 12:12:12'", "Gültig bis"],
         ["FOREIGN KEY (PERS_ID)", "REFERENCES PERSON(PERS_ID)", "Verknüpfung zur Person"]
     ]
 
@@ -41,11 +44,48 @@ class mitarbeiter(person.person):
         list_from_db, description = dbms_obj.select_all(table_name=cls.table_name, join_table_name=person.person.table_name, table_row_FK=cls.table_row_names[1][0], join_table_PK=person.person.table_row_names[0][0])
         if list_from_db is None:
             return obj_list
-        for (id, persid, eintrittsdatum, gehalt, persid1, surname, firstname, birthdate, street, housenr, floor, zip, place) in list_from_db:
+        for row in list_from_db:
             try:
-                obj_list.append(mitarbeiter(vorname=firstname, nachname=surname, geburtsdatum=birthdate, eintrittsdatum=eintrittsdatum, gehalt=gehalt, persid=persid, ma_id=id, straße=street, hausnr=housenr, stiege_top_etc=floor, plz=zip, ort=place))
-            except:
-                ...
+                # Handle different column counts gracefully - new schema has more columns
+                if len(row) >= 13:  # Original 13 columns from join
+                    id, persid, eintrittsdatum, gehalt = row[:4]
+                    # Handle additional columns
+                    exitdate = row[4] if len(row) > 4 else None
+                    valid_from = row[5] if len(row) > 5 else None
+                    valid_to = row[6] if len(row) > 6 else None
+                    # Person data starts after employee columns
+                    person_data_start = 7 if len(row) > 13 else 4
+                    persid1, surname, firstname, birthdate = row[person_data_start:person_data_start+4]
+                    street = row[person_data_start+4] if len(row) > person_data_start+4 else None
+                    housenr = row[person_data_start+5] if len(row) > person_data_start+5 else None
+                    floor = row[person_data_start+6] if len(row) > person_data_start+6 else None
+                    zip_code = row[person_data_start+7] if len(row) > person_data_start+7 else None
+                    place = row[person_data_start+8] if len(row) > person_data_start+8 else None
+                else:
+                    # Fallback for old schema
+                    id, persid, eintrittsdatum, gehalt, persid1, surname, firstname, birthdate, street, housenr, floor, zip_code, place = row[:13]
+                    exitdate = valid_from = valid_to = None
+                
+                obj_list.append(mitarbeiter(
+                    vorname=firstname, 
+                    nachname=surname, 
+                    geburtsdatum=birthdate, 
+                    eintrittsdatum=eintrittsdatum, 
+                    gehalt=gehalt, 
+                    persid=persid, 
+                    ma_id=id, 
+                    straße=street, 
+                    hausnr=housenr, 
+                    stiege_top_etc=floor, 
+                    plz=zip_code, 
+                    ort=place,
+                    exitdate=exitdate,
+                    valid_from=valid_from,
+                    valid_to=valid_to
+                ))
+            except Exception as e:
+                print(f"Error processing employee row: {e}")
+                print(f"Row data: {row}")
         return obj_list
 
     @classmethod
@@ -62,15 +102,52 @@ class mitarbeiter(person.person):
         list_from_db, description = dbms_obj.select_specific(table_name=cls.table_name, join_table_name=person.person.table_name, table_row_FK=cls.table_row_names[1][0], join_table_PK=person.person.table_row_names[0][0], limitations=f"{cls.table_row_names[0][0]} = {id}")
         if list_from_db is None:
             return obj_list
-        for (id, persid, eintrittsdatum, gehalt, persid1, surname, firstname, birthdate, street, housenr, floor, zip, place) in list_from_db:
+        for row in list_from_db:
             try:
-                obj_list.append(mitarbeiter(vorname=firstname, nachname=surname, geburtsdatum=birthdate, eintrittsdatum=eintrittsdatum, gehalt=gehalt, persid=persid, ma_id=id, straße=street, hausnr=housenr, stiege_top_etc=floor, plz=zip, ort=place))
-            except:
-                print(obj_list)
+                # Handle different column counts gracefully - new schema has more columns
+                if len(row) >= 13:  # Original 13 columns from join
+                    id, persid, eintrittsdatum, gehalt = row[:4]
+                    # Handle additional columns
+                    exitdate = row[4] if len(row) > 4 else None
+                    valid_from = row[5] if len(row) > 5 else None
+                    valid_to = row[6] if len(row) > 6 else None
+                    # Person data starts after employee columns
+                    person_data_start = 7 if len(row) > 13 else 4
+                    persid1, surname, firstname, birthdate = row[person_data_start:person_data_start+4]
+                    street = row[person_data_start+4] if len(row) > person_data_start+4 else None
+                    housenr = row[person_data_start+5] if len(row) > person_data_start+5 else None
+                    floor = row[person_data_start+6] if len(row) > person_data_start+6 else None
+                    zip_code = row[person_data_start+7] if len(row) > person_data_start+7 else None
+                    place = row[person_data_start+8] if len(row) > person_data_start+8 else None
+                else:
+                    # Fallback for old schema
+                    id, persid, eintrittsdatum, gehalt, persid1, surname, firstname, birthdate, street, housenr, floor, zip_code, place = row[:13]
+                    exitdate = valid_from = valid_to = None
+                
+                obj_list.append(mitarbeiter(
+                    vorname=firstname, 
+                    nachname=surname, 
+                    geburtsdatum=birthdate, 
+                    eintrittsdatum=eintrittsdatum, 
+                    gehalt=gehalt, 
+                    persid=persid, 
+                    ma_id=id, 
+                    straße=street, 
+                    hausnr=housenr, 
+                    stiege_top_etc=floor, 
+                    plz=zip_code, 
+                    ort=place,
+                    exitdate=exitdate,
+                    valid_from=valid_from,
+                    valid_to=valid_to
+                ))
+            except Exception as e:
+                print(f"Error in select_specific: {e}")
+                print(f"Row: {row}")
 
         return obj_list
 
-    def __init__(self, vorname: str, nachname: str, geburtsdatum: str, eintrittsdatum=dt.datetime.now().strftime("%d.%m.%Y"), gehalt: float = 0., persid: int = None, ma_id: int = None, straße: str = None, hausnr: int = None, stiege_top_etc: str = None, plz: int = None, ort: str = None):
+    def __init__(self, vorname: str, nachname: str, geburtsdatum: str, eintrittsdatum=dt.datetime.now().strftime("%d.%m.%Y"), gehalt: float = 0., persid: int = None, ma_id: int = None, straße: str = None, hausnr: int = None, stiege_top_etc: str = None, plz: int = None, ort: str = None, exitdate: str = None, valid_from: str = None, valid_to: str = None):
         """
         Erstellt den Mitarbeiter anhand der bekannten Parameter
         Args:
@@ -86,6 +163,9 @@ class mitarbeiter(person.person):
             stiege_top_etc (str, optional): Adresszusatz des Mitarbeiters. Defaults to None.
             plz (int, optional): Postleitzahl der Adresse des Mitarbeiters. Defaults to None.
             ort (str, optional): Ort der Adresse des Mitarbeiters. Defaults to None.
+            exitdate (str, optional): Austrittsdatum. Defaults to None.
+            valid_from (str, optional): Gültig von. Defaults to None.
+            valid_to (str, optional): Gültig bis. Defaults to None.
         """
         self.pers_id = super().__init__(vorname=vorname, nachname=nachname, geburtsdatum=geburtsdatum, straße=straße, hausnr=hausnr, stiege_top_etc=stiege_top_etc, plz=plz, ort=ort, id=persid)
         if ma_id is None:
@@ -94,6 +174,9 @@ class mitarbeiter(person.person):
             mitarbeiter.id = copy.deepcopy(ma_id)
         self.empolyee_ID = copy.deepcopy(mitarbeiter.id)
         self.entrydate = eintrittsdatum
+        self.exitdate = exitdate
+        self.valid_from = valid_from or dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.valid_to = valid_to or "2100-01-01 12:12:12"
         if type(gehalt) == str:
             if ";" in gehalt:
                 gehalt = gehalt.replace(".", "").replace(",", ".")
@@ -119,7 +202,7 @@ class mitarbeiter(person.person):
         Returns:
             tuple: Anordnung der Attributswerte
         """
-        return (self.empolyee_ID, self.obj_id, self.entrydate, self.salary)
+        return (self.empolyee_ID, self.obj_id, self.entrydate, self.salary, self.exitdate, self.valid_from, self.valid_to)
 
     def insert(self, db_ms: dbms.dbms):
         """
