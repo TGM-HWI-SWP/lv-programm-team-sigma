@@ -2,6 +2,7 @@ import streamlit as st
 from pathlib import Path
 import pandas as pd
 import datetime
+import datetime
 
 from modules import dbms, person, employee, auth
 # The following import is invalid and should be removed:
@@ -86,12 +87,12 @@ with col2:
     st.metric("🧑‍💼 Mitarbeiter", len(mitarbeiter))
 
 with col3:
-    # Anzahl Lohnabrechnungen diesen Monat
+    # Anzahl Lohnabrechnungen diesen Monat (angepasst auf lohnverrechnung_dn)
     import sqlite3
     conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     current_month = pd.Timestamp.now().strftime("%Y-%m")
-    cursor.execute("SELECT COUNT(*) FROM LOHNABRECHNUNG WHERE MONAT LIKE ?", (f"{current_month}%",))
+    cursor.execute("SELECT COUNT(*) FROM lohnverrechnung_dn WHERE lv_dn_monat LIKE ?", (f"{current_month}%",))
     payroll_count = cursor.fetchone()[0]
     conn.close()
     st.metric("💰 Abrechnungen (aktueller Monat)", payroll_count)
