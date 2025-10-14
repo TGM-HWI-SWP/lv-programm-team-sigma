@@ -265,7 +265,7 @@ with tab3:
                     import sqlite3
                     conn = sqlite3.connect(str(DB_PATH))
                     cursor = conn.cursor()
-                    cursor.execute("SELECT COUNT(*) FROM LOHNABRECHNUNG WHERE PERS_ID = ?", (selected_employee.obj_id,))
+                    cursor.execute("SELECT COUNT(*) FROM lohnverrechnung_dn WHERE lv_dn_empl_id = ?", (selected_employee.empolyee_ID,))
                     has_payroll = cursor.fetchone()[0] > 0
                     conn.close()
                     

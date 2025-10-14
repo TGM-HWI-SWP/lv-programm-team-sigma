@@ -215,10 +215,13 @@ with info_tab:
         
         # Get table sizes
         tables_info = []
-        for table_name in ['PERSON', 'MITARBEITER', 'LOHNABRECHNUNG', 'Benutzer']:
-            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-            count = cursor.fetchone()[0]
-            tables_info.append({'Tabelle': table_name, 'Anzahl Datensätze': count})
+        for table_name in ['PERSON', 'MITARBEITER', 'lohnverrechnung_dn', 'steuerliche_vorteile', 'Benutzer']:
+            try:
+                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                count = cursor.fetchone()[0]
+                tables_info.append({'Tabelle': table_name, 'Anzahl Datensätze': count})
+            except:
+                tables_info.append({'Tabelle': table_name, 'Anzahl Datensätze': 'Tabelle nicht gefunden'})
         
         conn.close()
         
