@@ -1,6 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import pandas as pd
+import datetime
 
 from modules import dbms, person, employee, auth
 # The following import is invalid and should be removed:
@@ -160,14 +161,52 @@ with st.expander("Stammdatenblätter als PDF für alle Personen generieren"):
         st.download_button(f"Stammdatenblatt: {p.surname} {p.name}", pdf_bytes, file_name=f"Stammdatenblatt_{p.surname}_{p.name}.pdf")
 
 with st.expander("Lohn-/Gehaltszettel als PDF für alle Mitarbeiter generieren"):
+    import importlib.util
+    ab_path = Path(__file__).parent / "modules" / "Abrechnung.py"
+    ab_spec = importlib.util.spec_from_file_location("Abrechnung", str(ab_path))
+    Abrechnung = importlib.util.module_from_spec(ab_spec)
+    ab_spec.loader.exec_module(Abrechnung)
     mitarbeiter_obj = employee.mitarbeiter.select_all(dbms_obj=db)
     for m in mitarbeiter_obj:
         brutto = m.salary if hasattr(m, 'salary') else 0
-        # Beispielhafte Netto-Berechnung (hier Dummy, im echten Fall mit Abrechnung.calc_brutto2netto)
-        netto = brutto * 0.7
-        pdf_bytes = pdf_tools.generate_real_payroll_pdf(m, brutto, netto)
+        # Dynamische Berechnung mit Defaultwerten
+        abrechnung_result = Abrechnung.calc_brutto2netto(
+            monat=datetime.date.today().month,
+            jahr=datetime.date.today().year,
+            stundensatz=38.5,
+            brutto=brutto
+        )
+        # Werte extrahieren
+        # Die Funktion gibt einen String zurück, wir parsen die wichtigsten Werte
+        result_lines = abrechnung_result.splitlines()
+        def extract_val(label):
+            for line in result_lines:
+                if label in line:
+                    try:
+                        return float(line.split(":")[-1].replace("€","").replace(",",".").strip())
+                    except:
+                        return 0
+            return 0
+        netto = extract_val("Nettolohn") or extract_val("Netto") or extract_val("ist:")
+        sv = extract_val("SV lfd")
+        lst = extract_val("Lohnsteuer")
+        kommst = extract_val("Kommunalsteuer")
+        db_val = extract_val("Dienstbeitrag")
+        dz = extract_val("Zuschlag (DB)")
+        dga = extract_val("U-Bahnsteuer")
+        bv = extract_val("BV")
+        abrechnung_data = {
+            "SV": sv,
+            "Lohnsteuer": lst,
+            "Kommunalsteuer": kommst,
+            "Dienstgeberbeitrag": db_val,
+            "Zuschlag DB": dz,
+            "U-Bahnsteuer": dga,
+            "BV": bv,
+        }
+        pdf_bytes = pdf_tools.generate_real_payroll_pdf(m, brutto, netto, abrechnung_data=abrechnung_data)
         st.download_button(f"Lohnzettel: {m.surname} {m.name}", pdf_bytes, file_name=f"Lohnzettel_{m.surname}_{m.name}.pdf")
-)
+
 
 # --- Session State Defaults ---
 if "dataset" not in st.session_state:
