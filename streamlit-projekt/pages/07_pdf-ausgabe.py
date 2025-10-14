@@ -2,6 +2,29 @@ from fpdf import FPDF
 import datetime
 import streamlit as st
 
+def generate_stammdatenblatt_pdf(person_obj):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Stammdatenblatt für {person_obj.surname} {person_obj.name}", ln=True)
+    pdf.cell(0, 10, f"Geburtsdatum: {person_obj.birthdate}", ln=True)
+    pdf.cell(0, 10, f"Adresse: {person_obj.street} {person_obj.housenr}, {person_obj.zip} {person_obj.place}", ln=True)
+    pdf.cell(0, 10, f"PLZ/Ort: {person_obj.zip} {person_obj.place}", ln=True)
+    pdf.cell(0, 10, f"ID: {person_obj.obj_id}", ln=True)
+    return pdf.output(dest='S').encode('latin1')
+
+def generate_real_payroll_pdf(employee_obj, brutto, netto):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Lohn-/Gehaltszettel für {employee_obj.surname} {employee_obj.name}", ln=True)
+    pdf.cell(0, 10, f"Geburtsdatum: {employee_obj.birthdate}", ln=True)
+    pdf.cell(0, 10, f"Eintrittsdatum: {employee_obj.entrydate}", ln=True)
+    pdf.cell(0, 10, f"Bruttogehalt: {brutto} EUR", ln=True)
+    pdf.cell(0, 10, f"Nettogehalt: {netto} EUR", ln=True)
+    pdf.cell(0, 10, f"Datum: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True)
+    return pdf.output(dest='S').encode('latin1')
+
 def generate_monthly_summary_pdf(new_employees, total_payroll):
     pdf = FPDF()
     pdf.add_page()

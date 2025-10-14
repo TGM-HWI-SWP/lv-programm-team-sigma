@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from modules import dbms, person, employee, auth
+from pages import 07_pdf-ausgabe as pdf_tools
 
 st.set_page_config(
     page_title="Personalverwaltung - Team Sigma", 
@@ -13,6 +14,15 @@ st.set_page_config(
 
 # --- Datenbank initialisieren ---
 DB_PATH = Path(__file__).parent / "stammdatenverwaltung.db"
+import importlib.util
+import sys
+
+from modules import dbms, person, employee, auth
+pdf_path = Path(__file__).parent / "pages" / "07_pdf-ausgabe.py"
+spec = importlib.util.spec_from_file_location("pdf_tools", str(pdf_path))
+pdf_tools = importlib.util.module_from_spec(spec)
+sys.modules["pdf_tools"] = pdf_tools
+spec.loader.exec_module(pdf_tools)
 db = dbms.dbms(str(DB_PATH))
 
 # Tabellen erstellen, falls nicht vorhanden
@@ -92,6 +102,23 @@ st.markdown(
     """
     **📋 Verfügbare Funktionen:**
     
+    **📄 PDF-Ausgabe**
+    - Monatsbericht als PDF herunterladen
+    - Lohn-/Gehaltszettel als PDF herunterladen
+    """
+)
+    
+col_pdf1, col_pdf2 = st.columns(2)
+with col_pdf1:
+    if st.button("Monatsbericht als PDF herunterladen"):
+        pdf_bytes = pdf_tools.generate_monthly_summary_pdf([m[1] for m in mitarbeiter], 5000)
+        st.download_button("Monatsbericht als PDF", pdf_bytes, file_name="Monatsbericht.pdf")
+with col_pdf2:
+    if st.button("Lohn-/Gehaltszettel als PDF herunterladen"):
+        # Beispiel: Erster Mitarbeiter, Betrag 2500
+        if mitarbeiter:
+            pdf_bytes = pdf_tools.generate_payroll_pdf(mitarbeiter[0][1], 2500)
+            st.download_button("Lohn-/Gehaltszettel als PDF", pdf_bytes, file_name="Gehaltszettel.pdf")
     **� Stammdaten** – Personen verwalten (Anlegen, Bearbeiten, Löschen)
     - Vollständige Adressdaten
     - Historische Datenhaltung
@@ -118,6 +145,21 @@ st.markdown(
     - PDF-Generierung (Lohnzettel, Stammdatenblätter)
     - Datenbank-Management
     - System-Informationen
+        st.markdown("**Automatisierter Druck von Stammdatenblättern und Lohnzetteln**")
+        with st.expander("Stammdatenblätter als PDF für alle Personen generieren"):
+            personen_obj = person.person.select_all(db_ms=db)
+            for p in personen_obj:
+                pdf_bytes = pdf_tools.generate_stammdatenblatt_pdf(p)
+                st.download_button(f"Stammdatenblatt: {p.surname} {p.name}", pdf_bytes, file_name=f"Stammdatenblatt_{p.surname}_{p.name}.pdf")
+
+        with st.expander("Lohn-/Gehaltszettel als PDF für alle Mitarbeiter generieren"):
+            mitarbeiter_obj = employee.mitarbeiter.select_all(dbms_obj=db)
+            for m in mitarbeiter_obj:
+                brutto = m.salary if hasattr(m, 'salary') else 0
+                # Beispielhafte Netto-Berechnung (hier Dummy, im echten Fall mit Abrechnung.calc_brutto2netto)
+                netto = brutto * 0.7
+                pdf_bytes = pdf_tools.generate_real_payroll_pdf(m, brutto, netto)
+                st.download_button(f"Lohnzettel: {m.surname} {m.name}", pdf_bytes, file_name=f"Lohnzettel_{m.surname}_{m.name}.pdf")
     """
 )
 
