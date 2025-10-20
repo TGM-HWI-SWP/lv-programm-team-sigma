@@ -135,60 +135,177 @@ def find_latest_payroll_for_employee(empl_id):
         }
         return data, row
 
-# PDF generator functions - PROFESSIONELLES DESIGN
+# PDF generator functions - VOLLSTÄNDIG OPTIMIERT FÜR A4
 def pdf_stammdatenblatt(person_like_row):
-    """Stammdatenblatt mit professionellem Layout"""
+    """Vollständiges Stammdatenblatt mit optimaler A4-Nutzung"""
     pdf = FPDF()
     pdf.add_page()
     
-    # Farben
-    COLOR_HEADER = (52, 73, 94)
-    COLOR_ACCENT = (41, 128, 185)
+    # Farben (BMD-Stil)
+    COLOR_HEADER = (41, 128, 185)
+    COLOR_SECTION = (52, 152, 219)
     COLOR_LIGHT_BG = (236, 240, 241)
     COLOR_TEXT = (44, 62, 80)
+    COLOR_BORDER = (189, 195, 199)
     
-    # Kopfzeile
+    # Kopfzeile mit Logo-Bereich
     pdf.set_fill_color(*COLOR_HEADER)
-    pdf.rect(0, 0, 210, 30, 'F')
+    pdf.rect(0, 0, 210, 40, 'F')
+    
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(15, 8, 25, 25, 'D')
+    pdf.set_font("Arial", 'B', 8)
+    pdf.set_text_color(*COLOR_HEADER)
+    pdf.set_xy(15, 18)
+    pdf.cell(25, 5, "LOGO", align='C')
+    
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", 'B', 18)
-    pdf.set_xy(10, 10)
-    pdf.cell(0, 10, "Stammdatenblatt", ln=True)
+    pdf.set_font("Arial", 'B', 20)
+    pdf.set_xy(45, 10)
+    pdf.cell(0, 10, "STAMMDATENBLATT", ln=True)
+    pdf.set_font("Arial", '', 9)
+    pdf.set_xy(45, 22)
+    pdf.cell(0, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True)
+    pdf.set_xy(45, 28)
+    pdf.cell(0, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True)
     
     # Name hervorgehoben
+    y_pos = 50
+    pdf.set_fill_color(*COLOR_SECTION)
     pdf.set_text_color(255, 255, 255)
-    pdf.set_fill_color(*COLOR_ACCENT)
     pdf.set_font("Arial", 'B', 14)
-    pdf.set_xy(10, 45)
+    pdf.set_xy(10, y_pos)
     name = f"{person_like_row['PERS_SURNAME']} {person_like_row['PERS_FIRSTNAME']}"
     pdf.cell(190, 10, name, border=1, fill=True, align='C')
+    y_pos += 12
     
-    # Datenfelder
+    # SEKTION 1: Personendaten
     pdf.set_text_color(*COLOR_TEXT)
-    pdf.set_font("Arial", '', 11)
-    y_pos = 60
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "PERSONENDATEN", border=1, fill=True)
+    y_pos += 8
     
-    fields = [
-        ("Geburtsdatum:", str(person_like_row.get("PERS_BIRTHDATE", "") or "")),
-        ("Straße / Hausnr.:", f"{person_like_row['PERS_STREET']} {person_like_row['PERS_HOUSENR']}".strip()),
-        ("PLZ / Ort:", f"{person_like_row['PERS_ZIP']} {person_like_row['PERS_PLACE']}".strip()),
-        ("Personen-ID:", str(person_like_row.get("PERS_ID", "")))
+    pdf.set_font("Arial", '', 9)
+    pdf.set_draw_color(*COLOR_BORDER)
+    
+    person_data = [
+        ("Personen-ID:", str(person_like_row.get("PERS_ID", "")), "Geburtsdatum:", str(person_like_row.get("PERS_BIRTHDATE", "") or "")),
+        ("Geschlecht:", "—", "Staatsangehörigkeit:", "Österreich"),
+        ("SV-Nummer:", "—", "Telefon:", "—"),
     ]
     
-    for i, (label, value) in enumerate(fields):
-        pdf.set_fill_color(*COLOR_LIGHT_BG) if i % 2 == 0 else pdf.set_fill_color(255, 255, 255)
+    for i, (l1, v1, l2, v2) in enumerate(person_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
         pdf.set_xy(10, y_pos)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(70, 9, label, border=1, fill=True)
-        pdf.set_font("Arial", '', 11)
-        pdf.cell(120, 9, value, border=1, fill=True)
-        y_pos += 9
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v2, border=1, fill=fill)
+        y_pos += 7
+    
+    y_pos += 3
+    
+    # SEKTION 2: Adressdaten
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "ADRESSDATEN", border=1, fill=True)
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    address_data = [
+        ("Straße / Hausnr.:", f"{person_like_row['PERS_STREET']} {person_like_row['PERS_HOUSENR']}".strip(), "E-Mail:", "—"),
+        ("PLZ / Ort:", f"{person_like_row['PERS_ZIP']} {person_like_row['PERS_PLACE']}".strip(), "Mobil:", "—"),
+    ]
+    
+    for i, (l1, v1, l2, v2) in enumerate(address_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v2, border=1, fill=fill)
+        y_pos += 7
+    
+    y_pos += 3
+    
+    # SEKTION 3: Beschäftigungsdaten
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "BESCHÄFTIGUNGSDATEN", border=1, fill=True)
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    employment_data = [
+        ("Eintrittsdatum:", person_like_row.get('EMPL_ENTRYDATE', '—') if 'EMPL_ENTRYDATE' in person_like_row.keys() else '—', "Personalnummer:", str(person_like_row.get("PERS_ID", ""))),
+        ("Position:", "—", "Abteilung:", "—"),
+        ("Beschäftigungsart:", "Vollzeit", "Lohnart:", "Monatslohn"),
+    ]
+    
+    for i, (l1, v1, l2, v2) in enumerate(employment_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v2, border=1, fill=fill)
+        y_pos += 7
+    
+    y_pos += 3
+    
+    # SEKTION 4: Bankdaten
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "BANKDATEN", border=1, fill=True)
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    bank_data = [
+        ("IBAN:", "AT__ ____ ____ ____ ____", "Kontoinhaber:", name),
+    ]
+    
+    for i, (l1, v1, l2, v2) in enumerate(bank_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, l2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, v2, border=1, fill=fill)
+        y_pos += 7
     
     # Fußzeile
-    pdf.set_y(270)
-    pdf.set_font("Arial", 'I', 9)
-    pdf.set_text_color(150, 150, 150)
-    pdf.cell(0, 5, f"Erstellt am {datetime.date.today().strftime('%d.%m.%Y')} | Team Sigma Personalverwaltung", align='C')
+    pdf.set_y(285)
+    pdf.set_font("Arial", '', 7)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(95, 3, "Team Sigma GmbH | UID: ATU12345678", align='L')
+    pdf.cell(95, 3, f"Seite 1 | {datetime.date.today().strftime('%d.%m.%Y')}", align='R')
     
     return pdf.output(dest="S").encode("latin1")
 

@@ -261,10 +261,11 @@ def generate_stammdatenblatt_pdf(person_obj):
     return pdf.output(dest='S').encode('latin1')
 
 
-# Professioneller BMD-Style Lohnzettel
+# Professioneller BMD-Style Lohnzettel - OPTIMIERT
 def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None):
     """
-    Generiert einen professionellen Lohn- und Gehaltszettel im BMD-Stil.
+    Generiert einen vollständigen, professionellen Lohn- und Gehaltszettel im BMD-Stil.
+    Optimiert für maximale Raumnutzung und professionelle Optik.
     
     Args:
         employee_obj: Mitarbeiter-Objekt mit Attributen
@@ -278,169 +279,256 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf = FPDF()
     pdf.add_page()
     
-    # === FARBEN DEFINIEREN (BMD-Style) ===
+    # === FARBEN (BMD-STIL) ===
     COLOR_HEADER_BG = (41, 128, 185)      # Blau für Kopfzeile
     COLOR_TABLE_HEADER = (52, 152, 219)   # Hellblau für Tabellenheader
     COLOR_GRAY_LIGHT = (236, 240, 241)    # Hellgrau für alternierende Zeilen
     COLOR_TEXT_DARK = (44, 62, 80)        # Dunkelgrau für Text
     COLOR_ACCENT = (46, 204, 113)         # Grün für Netto
+    COLOR_BORDER = (189, 195, 199)        # Hellgrau für Rahmen
     
     # === KOPFZEILE MIT FIRMENINFO ===
     pdf.set_fill_color(*COLOR_HEADER_BG)
-    pdf.rect(0, 0, 210, 35, 'F')  # Blaue Box über gesamte Breite
+    pdf.rect(0, 0, 210, 45, 'F')
     
-    pdf.set_text_color(255, 255, 255)  # Weißer Text
-    pdf.set_font("Arial", 'B', 16)
-    pdf.set_xy(10, 8)
+    # Logo-Bereich
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(15, 8, 25, 25, 'D')
+    pdf.set_font("Arial", 'B', 8)
+    pdf.set_text_color(*COLOR_HEADER_BG)
+    pdf.set_xy(15, 18)
+    pdf.cell(25, 5, "LOGO", align='C')
+    
+    # Firmentitel
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 18)
+    pdf.set_xy(45, 8)
     pdf.cell(0, 8, "Lohn- und Gehaltsabrechnung", ln=True)
     
-    pdf.set_font("Arial", '', 10)
-    pdf.set_xy(10, 18)
-    pdf.cell(0, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True)
-    pdf.set_xy(10, 23)
+    pdf.set_font("Arial", '', 9)
+    pdf.set_xy(45, 18)
+    pdf.cell(0, 4, "Team Sigma GmbH", ln=True)
+    pdf.set_xy(45, 23)
+    pdf.cell(0, 4, "Musterstraße 1 | 1010 Wien", ln=True)
+    pdf.set_xy(45, 28)
+    pdf.cell(0, 4, "UID: ATU12345678", ln=True)
+    
+    # Abrechnungsmonat
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_xy(45, 35)
     month_year = datetime.date.today().strftime('%B %Y')
     pdf.cell(0, 5, f"Abrechnungsmonat: {month_year}", ln=True)
     
-    # === MITARBEITERDATEN BOX ===
+    # === MITARBEITER-INFORMATIONSBOX (KOMPAKT) ===
+    y_start = 52
     pdf.set_text_color(*COLOR_TEXT_DARK)
-    y_start = 45
-    pdf.set_xy(10, y_start)
-    
-    # Box mit Rahmen
-    pdf.set_draw_color(200, 200, 200)
+    pdf.set_draw_color(*COLOR_BORDER)
     pdf.set_line_width(0.3)
-    pdf.rect(10, y_start, 190, 35)
     
-    pdf.set_font("Arial", 'B', 11)
-    pdf.set_xy(15, y_start + 3)
-    pdf.cell(0, 6, "MITARBEITER", ln=True)
+    # Box-Header
+    pdf.set_fill_color(*COLOR_TABLE_HEADER)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_xy(10, y_start)
+    pdf.cell(190, 7, "MITARBEITER-DATEN", border=1, fill=True, align='L')
+    y_start += 7
     
-    pdf.set_font("Arial", '', 10)
-    pdf.set_xy(15, y_start + 11)
-    pdf.cell(60, 5, f"Name:", border=0)
-    pdf.cell(0, 5, f"{employee_obj.surname} {employee_obj.name}", ln=True)
+    # Mitarbeiterdaten in 2 Spalten
+    pdf.set_text_color(*COLOR_TEXT_DARK)
+    pdf.set_font("Arial", '', 8)
     
-    pdf.set_xy(15, y_start + 17)
-    pdf.cell(60, 5, f"Geburtsdatum:", border=0)
-    pdf.cell(0, 5, f"{employee_obj.birthdate}", ln=True)
+    name = f"{employee_obj.surname} {employee_obj.name}"
+    addr = f"{employee_obj.street} {employee_obj.housenr}".strip()
+    place = f"{employee_obj.zip} {employee_obj.place}".strip()
     
-    pdf.set_xy(15, y_start + 23)
-    pdf.cell(60, 5, f"Adresse:", border=0)
-    pdf.cell(0, 5, f"{employee_obj.street} {employee_obj.housenr}, {employee_obj.zip} {employee_obj.place}", ln=True)
+    # Linke Spalte
+    pdf.set_xy(10, y_start)
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(30, 5, "Name:", border=1)
+    pdf.set_font("Arial", '', 8)
+    pdf.cell(65, 5, name, border=1)
     
-    # === BEZÜGE TABELLE (BMD-STIL) ===
-    y_table = y_start + 45
-    pdf.set_xy(10, y_table)
+    # Rechte Spalte
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(30, 5, "Pers.-Nr.:", border=1)
+    pdf.set_font("Arial", '', 8)
+    pdf.cell(65, 5, str(getattr(employee_obj, 'obj_id', '—')), border=1)
+    y_start += 5
+    
+    pdf.set_xy(10, y_start)
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(30, 5, "Geburtsdatum:", border=1)
+    pdf.set_font("Arial", '', 8)
+    pdf.cell(65, 5, str(employee_obj.birthdate), border=1)
+    
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(30, 5, "Eintritt:", border=1)
+    pdf.set_font("Arial", '', 8)
+    pdf.cell(65, 5, str(getattr(employee_obj, 'entrydate', '—')), border=1)
+    y_start += 5
+    
+    pdf.set_xy(10, y_start)
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(30, 5, "Adresse:", border=1)
+    pdf.set_font("Arial", '', 8)
+    pdf.cell(65, 5, f"{addr}, {place}", border=1)
+    
+    pdf.set_font("Arial", 'B', 8)
+    pdf.cell(30, 5, "SV-Nr.:", border=1)
+    pdf.set_font("Arial", '', 8)
+    pdf.cell(65, 5, "—", border=1)
+    y_start += 8
+    
+    # === GEHALTSTABELLE (ERWEITERT) ===
+    y_table = y_start
     
     # Tabellen-Header
     pdf.set_fill_color(*COLOR_TABLE_HEADER)
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", 'B', 10)
+    pdf.set_font("Arial", 'B', 9)
     
-    col_widths = [100, 40, 50]  # Spaltenbreiten
-    headers = ["Bezüge / Abzüge", "Satz", "Betrag (EUR)"]
+    col_widths = [80, 30, 30, 50]  # Bezeichnung | Menge | Satz | Betrag
+    headers = ["Bezeichnung", "Menge", "Satz", "Betrag (EUR)"]
     
     x_pos = 10
     for i, header in enumerate(headers):
         pdf.set_xy(x_pos, y_table)
-        pdf.cell(col_widths[i], 8, header, border=1, fill=True, align='C')
+        pdf.cell(col_widths[i], 7, header, border=1, fill=True, align='C')
         x_pos += col_widths[i]
     
-    y_table += 8
+    y_table += 7
     
     # === BRUTTOBEZÜGE ===
     pdf.set_text_color(*COLOR_TEXT_DARK)
-    pdf.set_font("Arial", '', 10)
+    pdf.set_font("Arial", 'B', 9)
+    pdf.set_fill_color(*COLOR_GRAY_LIGHT)
+    pdf.set_xy(10, y_table)
+    pdf.cell(190, 6, "BRUTTOBEZÜGE", border=1, fill=True)
+    y_table += 6
+    
+    pdf.set_font("Arial", '', 8)
     
     # Grundgehalt
     pdf.set_xy(10, y_table)
-    pdf.cell(col_widths[0], 7, "  Grundgehalt (Brutto)", border=1)
-    pdf.cell(col_widths[1], 7, "", border=1)
-    pdf.cell(col_widths[2], 7, f"{brutto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
-    y_table += 7
+    pdf.cell(col_widths[0], 6, "  Grundgehalt / Monatslohn", border=1)
+    pdf.cell(col_widths[1], 6, "1,000", border=1, align='C')
+    pdf.cell(col_widths[2], 6, "", border=1)
+    pdf.cell(col_widths[3], 6, f"{brutto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+    y_table += 6
     
-    # Weitere Bezüge aus abrechnung_data
+    # Weitere Bezüge (falls vorhanden)
     if abrechnung_data:
-        bezuege_keys = ["sonderzahlungen", "mehrstunden25", "überstunden50"]
-        for key in bezuege_keys:
+        extra_items = [
+            ("sonderzahlungen", "  Sonderzahlungen"),
+            ("mehrstunden25", "  Mehrstunden 25%"),
+            ("überstunden50", "  Überstunden 50%"),
+            ("zulagen", "  Zulagen"),
+        ]
+        
+        for key, label in extra_items:
             betrag = abrechnung_data.get(key, 0)
             if betrag > 0:
-                label_map = {
-                    "sonderzahlungen": "  Sonderzahlungen",
-                    "mehrstunden25": "  Mehrstunden 25%",
-                    "überstunden50": "  Überstunden 50%"
-                }
                 pdf.set_xy(10, y_table)
-                pdf.cell(col_widths[0], 7, label_map.get(key, key), border=1)
-                pdf.cell(col_widths[1], 7, "", border=1)
-                pdf.cell(col_widths[2], 7, f"{betrag:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
-                y_table += 7
+                pdf.cell(col_widths[0], 6, label, border=1)
+                pdf.cell(col_widths[1], 6, "", border=1)
+                pdf.cell(col_widths[2], 6, "", border=1)
+                pdf.cell(col_widths[3], 6, f"{betrag:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+                y_table += 6
     
-    # === ABZÜGE ===
     # Zwischensumme Brutto
     brutto_gesamt = brutto
     if abrechnung_data:
-        for key in ["sonderzahlungen", "mehrstunden25", "überstunden50"]:
+        for key in ["sonderzahlungen", "mehrstunden25", "überstunden50", "zulagen"]:
             brutto_gesamt += abrechnung_data.get(key, 0)
     
-    pdf.set_font("Arial", 'B', 10)
+    pdf.set_font("Arial", 'B', 9)
     pdf.set_fill_color(*COLOR_GRAY_LIGHT)
     pdf.set_xy(10, y_table)
-    pdf.cell(col_widths[0], 7, "  Zwischensumme Brutto", border=1, fill=True)
-    pdf.cell(col_widths[1], 7, "", border=1, fill=True)
-    pdf.cell(col_widths[2], 7, f"{brutto_gesamt:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
-    y_table += 7
+    pdf.cell(col_widths[0] + col_widths[1] + col_widths[2], 6, "Zwischensumme Brutto", border=1, fill=True, align='R')
+    pdf.cell(col_widths[3], 6, f"{brutto_gesamt:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
+    y_table += 8
     
-    pdf.set_font("Arial", '', 10)
+    # === ABZÜGE ===
+    pdf.set_font("Arial", 'B', 9)
+    pdf.set_fill_color(*COLOR_GRAY_LIGHT)
+    pdf.set_xy(10, y_table)
+    pdf.cell(190, 6, "ABZÜGE", border=1, fill=True)
+    y_table += 6
+    
+    pdf.set_font("Arial", '', 8)
     
     # SV-Abzug
     sv = abrechnung_data.get("SV", 0) if abrechnung_data else 0
-    pdf.set_xy(10, y_table)
-    pdf.cell(col_widths[0], 7, "  Sozialversicherung", border=1)
     satz_sv = (sv / brutto * 100) if brutto > 0 else 0
-    pdf.cell(col_widths[1], 7, f"{satz_sv:.2f}%", border=1, align='C')
-    pdf.cell(col_widths[2], 7, f"-{sv:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
-    y_table += 7
+    
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0], 6, "  Sozialversicherung lfd.", border=1)
+    pdf.cell(col_widths[1], 6, "", border=1)
+    pdf.cell(col_widths[2], 6, f"{satz_sv:.2f}%", border=1, align='C')
+    pdf.cell(col_widths[3], 6, f"-{sv:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+    y_table += 6
     
     # Lohnsteuer
     tax = abrechnung_data.get("Lohnsteuer", 0) if abrechnung_data else 0
     pdf.set_xy(10, y_table)
-    pdf.cell(col_widths[0], 7, "  Lohnsteuer", border=1)
-    pdf.cell(col_widths[1], 7, "", border=1)
-    pdf.cell(col_widths[2], 7, f"-{tax:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
-    y_table += 7
+    pdf.cell(col_widths[0], 6, "  Lohnsteuer", border=1)
+    pdf.cell(col_widths[1], 6, "", border=1)
+    pdf.cell(col_widths[2], 6, "", border=1)
+    pdf.cell(col_widths[3], 6, f"-{tax:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+    y_table += 6
     
     # Weitere Abzüge
-    if abrechnung_data:
-        if abrechnung_data.get("Gewerkschaft", 0) > 0:
-            gew = abrechnung_data["Gewerkschaft"]
-            pdf.set_xy(10, y_table)
-            pdf.cell(col_widths[0], 7, "  Gewerkschaftsbeitrag", border=1)
-            pdf.cell(col_widths[1], 7, "", border=1)
-            pdf.cell(col_widths[2], 7, f"-{gew:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
-            y_table += 7
+    if abrechnung_data and abrechnung_data.get("Gewerkschaft", 0) > 0:
+        gew = abrechnung_data["Gewerkschaft"]
+        pdf.set_xy(10, y_table)
+        pdf.cell(col_widths[0], 6, "  Gewerkschaftsbeitrag", border=1)
+        pdf.cell(col_widths[1], 6, "", border=1)
+        pdf.cell(col_widths[2], 6, "", border=1)
+        pdf.cell(col_widths[3], 6, f"-{gew:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+        y_table += 6
+    
+    # Summe Abzüge
+    summe_abzuege = sv + tax + (abrechnung_data.get("Gewerkschaft", 0) if abrechnung_data else 0)
+    pdf.set_font("Arial", 'B', 9)
+    pdf.set_fill_color(*COLOR_GRAY_LIGHT)
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0] + col_widths[1] + col_widths[2], 6, "Summe Abzüge", border=1, fill=True, align='R')
+    pdf.cell(col_widths[3], 6, f"-{summe_abzuege:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
+    y_table += 8
     
     # === NETTO (HERVORGEHOBEN) ===
-    pdf.set_font("Arial", 'B', 11)
+    pdf.set_font("Arial", 'B', 12)
     pdf.set_fill_color(*COLOR_ACCENT)
     pdf.set_text_color(255, 255, 255)
     pdf.set_xy(10, y_table)
-    pdf.cell(col_widths[0], 9, "  AUSZAHLUNGSBETRAG (NETTO)", border=1, fill=True)
-    pdf.cell(col_widths[1], 9, "", border=1, fill=True)
-    pdf.cell(col_widths[2], 9, f"{netto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
-    y_table += 9
+    pdf.cell(col_widths[0] + col_widths[1] + col_widths[2], 10, "AUSZAHLUNGSBETRAG (NETTO)", border=1, fill=True, align='R')
+    pdf.cell(col_widths[3], 10, f"{netto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
+    y_table += 12
+    
+    # === ZUSATZINFORMATIONEN ===
+    if y_table < 250:
+        y_table += 5
+        pdf.set_text_color(*COLOR_TEXT_DARK)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.set_xy(10, y_table)
+        pdf.cell(0, 5, "ZUSATZINFORMATIONEN", ln=True)
+        y_table += 6
+        
+        pdf.set_font("Arial", '', 8)
+        pdf.set_xy(10, y_table)
+        pdf.multi_cell(190, 4, 
+            "Der Auszahlungsbetrag wird auf das hinterlegte Bankkonto überwiesen.\n"
+            "Bitte bewahren Sie diese Abrechnung für Ihre Unterlagen auf.\n"
+            "Bei Fragen wenden Sie sich bitte an die Personalabteilung."
+        )
     
     # === FUßZEILE ===
-    pdf.set_text_color(*COLOR_TEXT_DARK)
-    pdf.set_font("Arial", 'I', 9)
-    pdf.set_xy(10, y_table + 10)
-    pdf.cell(0, 5, "Alle Angaben ohne Gewähr. Bei Fragen wenden Sie sich bitte an die Personalabteilung.", ln=True)
-    
-    # Seitennummer und Datum unten
-    pdf.set_y(280)
-    pdf.set_font("Arial", '', 8)
-    pdf.set_text_color(150, 150, 150)
-    pdf.cell(0, 5, f"Erstellt am {datetime.date.today().strftime('%d.%m.%Y')} | Seite 1 von 1", align='C')
+    pdf.set_y(285)
+    pdf.set_font("Arial", '', 7)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(63, 3, "Team Sigma GmbH", align='L')
+    pdf.cell(64, 3, "Vertraulich", align='C')
+    pdf.cell(63, 3, f"Seite 1 | {datetime.date.today().strftime('%d.%m.%Y')}", align='R')
     
     return pdf.output(dest='S').encode('latin1')
 
