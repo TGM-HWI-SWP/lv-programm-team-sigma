@@ -6,6 +6,18 @@ import datetime
 import streamlit as st
 from fpdf import FPDF
 
+# Hilfsfunktion für sichere Float-Konvertierung
+def str_to_float(value, default=0.0):
+    """Konvertiert String (auch mit Komma) zu Float"""
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value).replace(',', '.'))
+    except (ValueError, AttributeError):
+        return default
+
 # Optional project modules
 try:
     from modules import dbms, person, employee, auth
@@ -123,77 +135,186 @@ def find_latest_payroll_for_employee(empl_id):
         }
         return data, row
 
-# PDF generator functions
+# PDF generator functions - PROFESSIONELLES DESIGN
 def pdf_stammdatenblatt(person_like_row):
+    """Stammdatenblatt mit professionellem Layout"""
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
+    
+    # Farben
+    COLOR_HEADER = (52, 73, 94)
+    COLOR_ACCENT = (41, 128, 185)
+    COLOR_LIGHT_BG = (236, 240, 241)
+    COLOR_TEXT = (44, 62, 80)
+    
+    # Kopfzeile
+    pdf.set_fill_color(*COLOR_HEADER)
+    pdf.rect(0, 0, 210, 30, 'F')
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 18)
+    pdf.set_xy(10, 10)
     pdf.cell(0, 10, "Stammdatenblatt", ln=True)
-    pdf.ln(4)
-    pdf.set_font("Arial", "", 12)
+    
+    # Name hervorgehoben
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_fill_color(*COLOR_ACCENT)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_xy(10, 45)
     name = f"{person_like_row['PERS_SURNAME']} {person_like_row['PERS_FIRSTNAME']}"
-    addr = f"{person_like_row['PERS_STREET']} {person_like_row['PERS_HOUSENR']}".strip()
-    place = f"{person_like_row['PERS_ZIP']} {person_like_row['PERS_PLACE']}".strip()
-    rows = [
-        ("Name", name),
-        ("Geburtsdatum", str(person_like_row.get("PERS_BIRTHDATE", "") or "")),
-        ("Adresse", addr),
-        ("Ort", place),
+    pdf.cell(190, 10, name, border=1, fill=True, align='C')
+    
+    # Datenfelder
+    pdf.set_text_color(*COLOR_TEXT)
+    pdf.set_font("Arial", '', 11)
+    y_pos = 60
+    
+    fields = [
+        ("Geburtsdatum:", str(person_like_row.get("PERS_BIRTHDATE", "") or "")),
+        ("Straße / Hausnr.:", f"{person_like_row['PERS_STREET']} {person_like_row['PERS_HOUSENR']}".strip()),
+        ("PLZ / Ort:", f"{person_like_row['PERS_ZIP']} {person_like_row['PERS_PLACE']}".strip()),
+        ("Personen-ID:", str(person_like_row.get("PERS_ID", "")))
     ]
-    for label, value in rows:
-        pdf.cell(50, 8, f"{label}:", border=0)
-        pdf.cell(0, 8, value, ln=True)
-    pdf.ln(6)
-    pdf.set_font("Arial", "I", 10)
-    pdf.cell(0, 8, f"Erstellt am {datetime.date.today().strftime('%d.%m.%Y')}", ln=True)
+    
+    for i, (label, value) in enumerate(fields):
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if i % 2 == 0 else pdf.set_fill_color(255, 255, 255)
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(70, 9, label, border=1, fill=True)
+        pdf.set_font("Arial", '', 11)
+        pdf.cell(120, 9, value, border=1, fill=True)
+        y_pos += 9
+    
+    # Fußzeile
+    pdf.set_y(270)
+    pdf.set_font("Arial", 'I', 9)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, f"Erstellt am {datetime.date.today().strftime('%d.%m.%Y')} | Team Sigma Personalverwaltung", align='C')
+    
     return pdf.output(dest="S").encode("latin1")
 
 def pdf_lohnzettel(employee_row, payroll_data):
+    """Lohnzettel im professionellen BMD-Stil"""
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Lohn- und Gehaltsabrechnung", ln=True, align="C")
-    pdf.ln(2)
-    pdf.set_font("Arial", "", 11)
-    pdf.cell(0, 6, "Firma: Team Sigma GmbH, Musterstraße 1, 1010 Wien", ln=True)
-    pdf.cell(0, 6, f"Abrechnungsmonat: {payroll_data.get('month','-')}", ln=True)
-    pdf.ln(4)
+    
+    # Farben
+    COLOR_HEADER_BG = (41, 128, 185)
+    COLOR_TABLE_HEADER = (52, 152, 219)
+    COLOR_GRAY_LIGHT = (236, 240, 241)
+    COLOR_TEXT_DARK = (44, 62, 80)
+    COLOR_ACCENT = (46, 204, 113)
+    
+    # Kopfzeile
+    pdf.set_fill_color(*COLOR_HEADER_BG)
+    pdf.rect(0, 0, 210, 35, 'F')
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_xy(10, 8)
+    pdf.cell(0, 8, "Lohn- und Gehaltsabrechnung", ln=True)
+    pdf.set_font("Arial", '', 10)
+    pdf.set_xy(10, 18)
+    pdf.cell(0, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True)
+    pdf.set_xy(10, 23)
+    month_year = payroll_data.get('month', datetime.date.today().strftime('%Y-%m'))
+    pdf.cell(0, 5, f"Abrechnungsmonat: {month_year}", ln=True)
+    
+    # Mitarbeiterdaten Box
+    pdf.set_text_color(*COLOR_TEXT_DARK)
+    y_start = 45
+    pdf.set_draw_color(200, 200, 200)
+    pdf.set_line_width(0.3)
+    pdf.rect(10, y_start, 190, 30)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(15, y_start + 3)
+    pdf.cell(0, 6, "MITARBEITER", ln=True)
+    pdf.set_font("Arial", '', 10)
     name = f"{employee_row['PERS_SURNAME']} {employee_row['PERS_FIRSTNAME']}"
     addr = f"{employee_row['PERS_STREET']} {employee_row['PERS_HOUSENR']}".strip()
     place = f"{employee_row['PERS_ZIP']} {employee_row['PERS_PLACE']}".strip()
-    pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 7, "Mitarbeiter", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.cell(0, 6, f"Name: {name}", ln=True)
-    pdf.cell(0, 6, f"Adresse: {addr}", ln=True)
-    pdf.cell(0, 6, f"Ort: {place}", ln=True)
-    pdf.ln(4)
+    
+    pdf.set_xy(15, y_start + 11)
+    pdf.cell(0, 5, f"Name: {name} | Adresse: {addr}, {place}", ln=True)
+    
+    # Gehaltstabelle
+    y_table = y_start + 40
+    col_widths = [100, 40, 50]
+    
+    # Header
+    pdf.set_fill_color(*COLOR_TABLE_HEADER)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 10)
+    headers = ["Bezüge / Abzüge", "Satz", "Betrag (EUR)"]
+    x_pos = 10
+    for i, header in enumerate(headers):
+        pdf.set_xy(x_pos, y_table)
+        pdf.cell(col_widths[i], 8, header, border=1, fill=True, align='C')
+        x_pos += col_widths[i]
+    y_table += 8
+    
+    # Daten holen
     brutto = payroll_data.get("brutto")
     netto = payroll_data.get("netto")
     tax = payroll_data.get("tax")
     sv = payroll_data.get("sv")
+    
     if brutto is None:
-        brutto = float(employee_row["EMPL_BRUTTOGEHALT"]) if "EMPL_BRUTTOGEHALT" in employee_row.keys() and employee_row["EMPL_BRUTTOGEHALT"] is not None else 0.0
+        brutto = str_to_float(employee_row.get("EMPL_BRUTTOGEHALT"), 0.0)
     if sv is None:
-        sv = round(brutto * 0.185, 2)
+        sv = round(brutto * 0.1807, 2)
     if tax is None:
         tax = round(max(brutto - sv, 0) * 0.2, 2)
     if netto is None:
         netto = round(brutto - sv - tax, 2)
-    def row(label, value):
-        pdf.cell(80, 8, label, border=1)
-        pdf.cell(0, 8, f"{value:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", "."), border=1, ln=True)
-    pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 7, "Bezüge/Abzüge", ln=True)
-    pdf.set_font("Arial", "", 11)
-    row("Bruttobezüge", brutto)
-    row("Sozialversicherung", -sv)
-    row("Lohnsteuer", -tax)
-    pdf.set_font("Arial", "B", 11)
-    row("Auszahlungsbetrag (Netto)", netto)
-    pdf.ln(6)
-    pdf.set_font("Arial", "I", 10)
-    pdf.cell(0, 8, "Hinweis: Einige Beträge wurden mangels Detaildaten angenähert.", ln=True)
+    
+    # Brutto
+    pdf.set_text_color(*COLOR_TEXT_DARK)
+    pdf.set_font("Arial", '', 10)
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0], 7, "  Grundgehalt (Brutto)", border=1)
+    pdf.cell(col_widths[1], 7, "", border=1)
+    pdf.cell(col_widths[2], 7, f"{brutto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+    y_table += 7
+    
+    # Zwischensumme
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_fill_color(*COLOR_GRAY_LIGHT)
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0], 7, "  Zwischensumme Brutto", border=1, fill=True)
+    pdf.cell(col_widths[1], 7, "", border=1, fill=True)
+    pdf.cell(col_widths[2], 7, f"{brutto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
+    y_table += 7
+    
+    # Abzüge
+    pdf.set_font("Arial", '', 10)
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0], 7, "  Sozialversicherung", border=1)
+    satz_sv = (sv / brutto * 100) if brutto > 0 else 0
+    pdf.cell(col_widths[1], 7, f"{satz_sv:.1f}%", border=1, align='C')
+    pdf.cell(col_widths[2], 7, f"-{sv:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+    y_table += 7
+    
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0], 7, "  Lohnsteuer", border=1)
+    pdf.cell(col_widths[1], 7, "", border=1)
+    pdf.cell(col_widths[2], 7, f"-{tax:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+    y_table += 7
+    
+    # Netto hervorgehoben
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_fill_color(*COLOR_ACCENT)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_xy(10, y_table)
+    pdf.cell(col_widths[0], 9, "  AUSZAHLUNGSBETRAG (NETTO)", border=1, fill=True)
+    pdf.cell(col_widths[1], 9, "", border=1, fill=True)
+    pdf.cell(col_widths[2], 9, f"{netto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
+    
+    # Fußzeile
+    pdf.set_y(280)
+    pdf.set_font("Arial", '', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, f"Erstellt am {datetime.date.today().strftime('%d.%m.%Y')} | Seite 1 von 1", align='C')
+    
     return pdf.output(dest="S").encode("latin1")
 
 # Optional ORM initialization
