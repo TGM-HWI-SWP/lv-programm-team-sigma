@@ -83,10 +83,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf.set_draw_color(*COLOR_BORDER)
     
     person_data = [
-        ("Personen-ID:", str(person_obj.obj_id), "Geschlecht:", "—"),
+        ("Personen-ID:", str(person_obj.obj_id), "Geschlecht:", "-"),
         ("Geburtsdatum:", str(person_obj.birthdate), "Staatsangehörigkeit:", "Österreich"),
-        ("Geburtsort:", "—", "Familienstand:", "—"),
-        ("SV-Nummer:", "—", "Telefon:", "—"),
+        ("Geburtsort:", "-", "Familienstand:", "-"),
+        ("SV-Nummer:", "-", "Telefon:", "-"),
     ]
     
     for i, (label1, value1, label2, value2) in enumerate(person_data):
@@ -118,9 +118,9 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf.set_font("Arial", '', 10)
     
     address_data = [
-        ("Straße / Hausnr.:", f"{person_obj.street} {person_obj.housenr}", "E-Mail:", "—"),
-        ("PLZ / Ort:", f"{person_obj.zip} {person_obj.place}", "Mobil:", "—"),
-        ("Land:", "Österreich", "Fax:", "—"),
+        ("Straße / Hausnr.:", f"{person_obj.street} {person_obj.housenr}", "E-Mail:", "-"),
+        ("PLZ / Ort:", f"{person_obj.zip} {person_obj.place}", "Mobil:", "-"),
+        ("Land:", "Österreich", "Fax:", "-"),
     ]
     
     for i, (label1, value1, label2, value2) in enumerate(address_data):
@@ -151,10 +151,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf.set_text_color(*COLOR_TEXT)
     
     employment_data = [
-        ("Eintrittsdatum:", getattr(person_obj, 'entrydate', '—'), "Personalnummer:", str(person_obj.obj_id)),
-        ("Position:", "—", "Abteilung:", "—"),
+        ("Eintrittsdatum:", getattr(person_obj, 'entrydate', '-'), "Personalnummer:", str(person_obj.obj_id)),
+        ("Position:", "-", "Abteilung:", "-"),
         ("Beschäftigungsart:", "Vollzeit", "Wochenarbeitszeit:", "40,0 Std."),
-        ("Lohnart:", "Monatslohn", "Kollektivvertrag:", "—"),
+        ("Lohnart:", "Monatslohn", "Kollektivvertrag:", "-"),
     ]
     
     for i, (label1, value1, label2, value2) in enumerate(employment_data):
@@ -185,8 +185,8 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf.set_text_color(*COLOR_TEXT)
     
     bank_data = [
-        ("Bankname:", "—", "Kontoinhaber:", f"{person_obj.surname} {person_obj.name}"),
-        ("IBAN:", "AT__ ____ ____ ____ ____", "BIC:", "—"),
+        ("Bankname:", "-", "Kontoinhaber:", f"{person_obj.surname} {person_obj.name}"),
+        ("IBAN:", "AT__ ____ ____ ____ ____", "BIC:", "-"),
     ]
     
     for i, (label1, value1, label2, value2) in enumerate(bank_data):
@@ -217,7 +217,7 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf.set_text_color(*COLOR_TEXT)
     
     tax_data = [
-        ("Steuernummer:", "—", "Freibetrag:", "0,00 EUR"),
+        ("Steuernummer:", "-", "Freibetrag:", "0,00 EUR"),
         ("Pendlerpauschale:", "Nein", "Alleinverdiener:", "Nein"),
         ("Kinderfreibetrag:", "0", "Kirchenbeitrag:", "Nein"),
     ]
@@ -352,7 +352,7 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(30, 5, "Pers.-Nr.:", border=1)
     pdf.set_font("Arial", '', 8)
-    pdf.cell(65, 5, str(getattr(employee_obj, 'obj_id', '—')), border=1)
+    pdf.cell(65, 5, str(getattr(employee_obj, 'obj_id', '-')), border=1)
     y_start += 5
     
     pdf.set_xy(10, y_start)
@@ -364,7 +364,7 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(30, 5, "Eintritt:", border=1)
     pdf.set_font("Arial", '', 8)
-    pdf.cell(65, 5, str(getattr(employee_obj, 'entrydate', '—')), border=1)
+    pdf.cell(65, 5, str(getattr(employee_obj, 'entrydate', '-')), border=1)
     y_start += 5
     
     pdf.set_xy(10, y_start)
@@ -376,7 +376,7 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf.set_font("Arial", 'B', 8)
     pdf.cell(30, 5, "SV-Nr.:", border=1)
     pdf.set_font("Arial", '', 8)
-    pdf.cell(65, 5, "—", border=1)
+    pdf.cell(65, 5, "-", border=1)
     y_start += 8
     
     # === GEHALTSTABELLE (ERWEITERT) ===
