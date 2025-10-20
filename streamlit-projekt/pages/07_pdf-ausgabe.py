@@ -15,10 +15,11 @@ def str_to_float(value, default=0.0):
     except (ValueError, AttributeError):
         return default
 
-# Professionelles Stammdatenblatt
+# Professionelles Stammdatenblatt - VOLLSTÄNDIGE A4-NUTZUNG
 def generate_stammdatenblatt_pdf(person_obj):
     """
-    Generiert ein professionelles Stammdatenblatt-PDF für eine Person.
+    Generiert ein vollständiges, professionelles Stammdatenblatt im BMD-Stil.
+    Nutzt die gesamte A4-Seite mit allen relevanten Mitarbeiterinformationen.
     
     Args:
         person_obj: Person-Objekt mit Attributen: surname, name, birthdate, street, housenr, zip, place, obj_id
@@ -29,69 +30,233 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf = FPDF()
     pdf.add_page()
     
-    # === FARBEN ===
-    COLOR_HEADER = (52, 73, 94)      # Dunkelblau
-    COLOR_ACCENT = (41, 128, 185)    # Hellblau
-    COLOR_LIGHT_BG = (236, 240, 241) # Hellgrau
-    COLOR_TEXT = (44, 62, 80)        # Dunkelgrau
+    # === FARBEN (BMD-STIL) ===
+    COLOR_HEADER = (41, 128, 185)     # Blau wie Lohnzettel
+    COLOR_SECTION = (52, 152, 219)    # Hellblau für Sektionen
+    COLOR_LIGHT_BG = (236, 240, 241)  # Hellgrau
+    COLOR_TEXT = (44, 62, 80)         # Dunkelgrau
+    COLOR_BORDER = (189, 195, 199)    # Hellgrau für Rahmen
     
-    # === KOPFZEILE ===
+    # === KOPFZEILE MIT FIRMENINFO ===
     pdf.set_fill_color(*COLOR_HEADER)
-    pdf.rect(0, 0, 210, 30, 'F')
+    pdf.rect(0, 0, 210, 40, 'F')
     
+    # Logo-Bereich (Platzhalter)
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(15, 8, 25, 25, 'D')  # Weißes Quadrat für Logo
+    pdf.set_font("Arial", 'B', 8)
+    pdf.set_text_color(*COLOR_HEADER)
+    pdf.set_xy(15, 18)
+    pdf.cell(25, 5, "LOGO", align='C')
+    
+    # Firmenname und Titel
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", 'B', 18)
-    pdf.set_xy(10, 10)
-    pdf.cell(0, 10, "Stammdatenblatt", ln=True)
+    pdf.set_font("Arial", 'B', 20)
+    pdf.set_xy(45, 10)
+    pdf.cell(0, 10, "STAMMDATENBLATT", ln=True)
     
-    # === PERSONENDATEN BOX ===
-    pdf.set_text_color(*COLOR_TEXT)
-    y_pos = 45
+    pdf.set_font("Arial", '', 9)
+    pdf.set_xy(45, 22)
+    pdf.cell(0, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True)
+    pdf.set_xy(45, 28)
+    pdf.cell(0, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True)
     
-    # Name - Hervorgehoben
-    pdf.set_fill_color(*COLOR_ACCENT)
+    # === MITARBEITER-ÜBERSCHRIFT ===
+    y_pos = 50
+    pdf.set_fill_color(*COLOR_SECTION)
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 14)
     pdf.set_xy(10, y_pos)
     pdf.cell(190, 10, f"{person_obj.surname} {person_obj.name}", border=1, fill=True, align='C')
-    y_pos += 15
+    y_pos += 12
     
-    # Datenfelder mit alternierender Hintergrundfarbe
+    # === SEKTION 1: PERSONENDATEN ===
     pdf.set_text_color(*COLOR_TEXT)
-    pdf.set_font("Arial", '', 11)
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "PERSONENDATEN", border=1, fill=True, align='L')
+    y_pos += 8
     
-    fields = [
-        ("Personen-ID:", str(person_obj.obj_id)),
-        ("Geburtsdatum:", str(person_obj.birthdate)),
-        ("Straße / Hausnummer:", f"{person_obj.street} {person_obj.housenr}"),
-        ("PLZ / Ort:", f"{person_obj.zip} {person_obj.place}")
+    # Tabelle mit 2 Spalten
+    pdf.set_font("Arial", '', 10)
+    pdf.set_draw_color(*COLOR_BORDER)
+    
+    person_data = [
+        ("Personen-ID:", str(person_obj.obj_id), "Geschlecht:", "—"),
+        ("Geburtsdatum:", str(person_obj.birthdate), "Staatsangehörigkeit:", "Österreich"),
+        ("Geburtsort:", "—", "Familienstand:", "—"),
+        ("SV-Nummer:", "—", "Telefon:", "—"),
     ]
     
-    for i, (label, value) in enumerate(fields):
-        # Alternierende Hintergrundfarbe
-        if i % 2 == 0:
-            pdf.set_fill_color(*COLOR_LIGHT_BG)
-            fill = True
-        else:
-            fill = False
+    for i, (label1, value1, label2, value2) in enumerate(person_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
         
         pdf.set_xy(10, y_pos)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(70, 9, label, border=1, fill=fill)
-        pdf.set_font("Arial", '', 11)
-        pdf.cell(120, 9, value, border=1, fill=fill)
-        y_pos += 9
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value2, border=1, fill=fill)
+        y_pos += 7
     
-    # === DEKORATIVE LINIE ===
-    pdf.set_draw_color(*COLOR_ACCENT)
-    pdf.set_line_width(0.5)
-    pdf.line(10, y_pos + 10, 200, y_pos + 10)
+    y_pos += 3
+    
+    # === SEKTION 2: ADRESSDATEN ===
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "ADRESSDATEN", border=1, fill=True, align='L')
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    pdf.set_font("Arial", '', 10)
+    
+    address_data = [
+        ("Straße / Hausnr.:", f"{person_obj.street} {person_obj.housenr}", "E-Mail:", "—"),
+        ("PLZ / Ort:", f"{person_obj.zip} {person_obj.place}", "Mobil:", "—"),
+        ("Land:", "Österreich", "Fax:", "—"),
+    ]
+    
+    for i, (label1, value1, label2, value2) in enumerate(address_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value2, border=1, fill=fill)
+        y_pos += 7
+    
+    y_pos += 3
+    
+    # === SEKTION 3: BESCHÄFTIGUNGSDATEN ===
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "BESCHÄFTIGUNGSDATEN", border=1, fill=True, align='L')
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    
+    employment_data = [
+        ("Eintrittsdatum:", getattr(person_obj, 'entrydate', '—'), "Personalnummer:", str(person_obj.obj_id)),
+        ("Position:", "—", "Abteilung:", "—"),
+        ("Beschäftigungsart:", "Vollzeit", "Wochenarbeitszeit:", "40,0 Std."),
+        ("Lohnart:", "Monatslohn", "Kollektivvertrag:", "—"),
+    ]
+    
+    for i, (label1, value1, label2, value2) in enumerate(employment_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value2, border=1, fill=fill)
+        y_pos += 7
+    
+    y_pos += 3
+    
+    # === SEKTION 4: BANKDATEN ===
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "BANKDATEN", border=1, fill=True, align='L')
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    
+    bank_data = [
+        ("Bankname:", "—", "Kontoinhaber:", f"{person_obj.surname} {person_obj.name}"),
+        ("IBAN:", "AT__ ____ ____ ____ ____", "BIC:", "—"),
+    ]
+    
+    for i, (label1, value1, label2, value2) in enumerate(bank_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value2, border=1, fill=fill)
+        y_pos += 7
+    
+    y_pos += 3
+    
+    # === SEKTION 5: STEUERDATEN ===
+    pdf.set_fill_color(*COLOR_SECTION)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.set_xy(10, y_pos)
+    pdf.cell(190, 8, "STEUERDATEN", border=1, fill=True, align='L')
+    y_pos += 8
+    
+    pdf.set_text_color(*COLOR_TEXT)
+    
+    tax_data = [
+        ("Steuernummer:", "—", "Freibetrag:", "0,00 EUR"),
+        ("Pendlerpauschale:", "Nein", "Alleinverdiener:", "Nein"),
+        ("Kinderfreibetrag:", "0", "Kirchenbeitrag:", "Nein"),
+    ]
+    
+    for i, (label1, value1, label2, value2) in enumerate(tax_data):
+        fill = (i % 2 == 0)
+        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        
+        pdf.set_xy(10, y_pos)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label1, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value1, border=1, fill=fill)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.cell(45, 7, label2, border=1, fill=fill)
+        pdf.set_font("Arial", '', 9)
+        pdf.cell(50, 7, value2, border=1, fill=fill)
+        y_pos += 7
+    
+    # === SIGNATURFELD (falls Platz) ===
+    if y_pos < 260:
+        y_pos += 5
+        pdf.set_draw_color(*COLOR_BORDER)
+        pdf.rect(10, y_pos, 90, 20)
+        pdf.rect(110, y_pos, 90, 20)
+        
+        pdf.set_font("Arial", 'I', 8)
+        pdf.set_text_color(150, 150, 150)
+        pdf.set_xy(10, y_pos + 15)
+        pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
+        pdf.set_xy(110, y_pos + 15)
+        pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
     
     # === FUßZEILE ===
-    pdf.set_y(270)
-    pdf.set_font("Arial", 'I', 9)
-    pdf.set_text_color(150, 150, 150)
-    pdf.cell(0, 5, f"Erstellt am {datetime.date.today().strftime('%d.%m.%Y')} | Team Sigma Personalverwaltung", align='C')
+    pdf.set_y(285)
+    pdf.set_font("Arial", '', 7)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(95, 3, "Team Sigma GmbH | UID: ATU12345678", align='L')
+    pdf.cell(95, 3, f"Seite 1 | {datetime.date.today().strftime('%d.%m.%Y')}", align='R')
     
     return pdf.output(dest='S').encode('latin1')
 
