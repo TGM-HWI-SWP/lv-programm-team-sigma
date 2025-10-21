@@ -294,22 +294,22 @@ def pdf_stammdatenblatt(person_like_row):
         y_pos += 7
     
     # === SIGNATURFELD ===
-    # Verschiebe Unterschriften weiter nach unten für bessere Seitennutzung
-    y_pos = max(y_pos + 5, 255)  # Mindestens bei Y=255, oder tiefer falls mehr Inhalt
+    # KRITISCH: Maximal bis Y=240 um sicher auf einer Seite zu bleiben
+    y_pos = min(max(y_pos + 3, 238), 242)  # Zwischen Y=238 und Y=242
     
     pdf.set_draw_color(*COLOR_BORDER)
-    pdf.rect(10, y_pos, 90, 20)
-    pdf.rect(110, y_pos, 90, 20)
+    pdf.rect(10, y_pos, 90, 15)  # Reduziert von 20mm auf 15mm
+    pdf.rect(110, y_pos, 90, 15)
     
-    pdf.set_font("Arial", 'I', 8)
+    pdf.set_font("Arial", 'I', 7)  # Kleinere Schrift
     pdf.set_text_color(150, 150, 150)
-    pdf.set_xy(10, y_pos + 15)
-    pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
-    pdf.set_xy(110, y_pos + 15)
-    pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
+    pdf.set_xy(10, y_pos + 11)
+    pdf.cell(90, 4, "Unterschrift Mitarbeiter", align='C')
+    pdf.set_xy(110, y_pos + 11)
+    pdf.cell(90, 4, "Unterschrift Geschäftsführung", align='C')
     
     # Fußzeile
-    pdf.set_y(285)
+    pdf.set_y(275)  # Von 285 auf 275 reduziert
     pdf.set_font("Arial", '', 7)
     pdf.set_text_color(120, 120, 120)
     pdf.cell(95, 3, "Team Sigma GmbH | UID: ATU12345678", align='L')

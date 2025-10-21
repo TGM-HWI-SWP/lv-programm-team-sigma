@@ -230,23 +230,23 @@ def generate_stammdatenblatt_pdf(person_obj):
         y_pos += 7
     
     # === SIGNATURFELD ===
-    # WICHTIG: Maximal bis Y=250 um Platz für Fußzeile zu lassen
-    y_pos = min(max(y_pos + 5, 245), 250)  # Zwischen Y=245 und Y=250
+    # KRITISCH: Maximal bis Y=240 um sicher auf einer Seite zu bleiben
+    y_pos = min(max(y_pos + 3, 238), 242)  # Zwischen Y=238 und Y=242
     
     pdf.set_draw_color(*COLOR_BORDER)
-    pdf.rect(10, y_pos, 90, 18)
-    pdf.rect(110, y_pos, 90, 18)
+    pdf.rect(10, y_pos, 90, 15)  # Reduziert von 18mm auf 15mm
+    pdf.rect(110, y_pos, 90, 15)
     
-    pdf.set_font("Arial", 'I', 8)
+    pdf.set_font("Arial", 'I', 7)  # Kleinere Schrift
     pdf.set_text_color(150, 150, 150)
-    pdf.set_xy(10, y_pos + 13)
-    pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
-    pdf.set_xy(110, y_pos + 13)
-    pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
+    pdf.set_xy(10, y_pos + 11)
+    pdf.cell(90, 4, "Unterschrift Mitarbeiter", align='C')
+    pdf.set_xy(110, y_pos + 11)
+    pdf.cell(90, 4, "Unterschrift Geschäftsführung", align='C')
     
     # === FUßZEILE ===
-    # Fest bei Y=280 um zweite Seite zu vermeiden
-    pdf.set_y(280)
+    # Höher setzen um sicher auf Seite 1 zu bleiben
+    pdf.set_y(275)  # Von 280 auf 275
     pdf.set_font("Arial", '', 7)
     pdf.set_text_color(120, 120, 120)
     pdf.cell(95, 3, "Team Sigma GmbH | UID: ATU12345678", align='L')
