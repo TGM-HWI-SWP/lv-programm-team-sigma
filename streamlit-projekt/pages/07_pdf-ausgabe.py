@@ -28,6 +28,7 @@ def generate_stammdatenblatt_pdf(person_obj):
         bytes: PDF als bytes (latin1-encoded)
     """
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=False, margin=0)  # KRITISCH: Verhindert automatischen Seitenumbruch
     pdf.add_page()
     
     # === FARBEN (BMD-STIL) ===
@@ -271,6 +272,7 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
         bytes: PDF als bytes (latin1-encoded)
     """
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=False, margin=0)  # KRITISCH: Verhindert automatischen Seitenumbruch
     pdf.add_page()
     
     # === FARBEN (BMD-STIL) ===
@@ -642,10 +644,10 @@ else:
     with col1:
         st.metric("Name", f"{selected_employee['PERS_SURNAME']} {selected_employee['PERS_FIRSTNAME']}")
     with col2:
-        birthdate = selected_employee['PERS_BIRTHDATE'] or "-"
+        birthdate = selected_employee['PERS_BIRTHDATE'] if selected_employee['PERS_BIRTHDATE'] else "-"
         st.metric("Geburtsdatum", birthdate)
     with col3:
-        entrydate = selected_employee['EMPL_ENTRYDATE'] or "-"
+        entrydate = selected_employee['EMPL_ENTRYDATE'] if selected_employee['EMPL_ENTRYDATE'] else "-"
         st.metric("Eintrittsdatum", entrydate)
     
     # PDF-Generierung

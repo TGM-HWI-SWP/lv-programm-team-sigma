@@ -169,36 +169,7 @@ with col3:
 with col4:
     st.metric("📄 PDF-Tools", 2)
 
-st.subheader("📄 PDF-Ausgabe")
-
-# Prepare employee data for display
-emp_data = []
-for m in mitarbeiter:
-    emp_data.append({
-        'PERS_SURNAME': m.surname,
-        'PERS_FIRSTNAME': m.name,
-        'EMPL_ID': m.empolyee_ID
-    })
-
-emp_display = [f"{e['PERS_SURNAME']}, {e['PERS_FIRSTNAME']} (EMPL_ID {e['EMPL_ID']})" for e in emp_data]
-selected_idx = st.selectbox("Mitarbeiter auswählen", list(range(len(emp_display))), format_func=lambda i: emp_display[i] if emp_display else "-") if emp_data else None
-
-colA, colB = st.columns(2)
-
-with colA:
-    st.markdown("**Stammdatenblatt**")
-    if emp_data and selected_idx is not None:
-        st.info("PDF-Generierung für Stammdatenblätter ist in Seite 07_pdf-ausgabe.py verfügbar.")
-    else:
-        st.info("Keine Mitarbeiter in der Datenbank.")
-
-with colB:
-    st.markdown("**Lohn- und Gehaltszettel**")
-    if emp_data and selected_idx is not None:
-        st.info("PDF-Generierung für Lohnzettel ist in Seite 07_pdf-ausgabe.py verfügbar.")
-    else:
-        st.info("Keine Mitarbeiter in der Datenbank.")
-
 st.divider()
 st.caption(f"Datenbankdatei: {DB_PATH}")
 st.caption("💡 Tipp: Verwende die Seitenleiste (links), um zu anderen Funktionen zu navigieren")
+st.caption("📄 Für PDF-Generierung (Stammdatenblätter & Lohnzettel) siehe Seite '07_📄pdf-ausgabe'")
