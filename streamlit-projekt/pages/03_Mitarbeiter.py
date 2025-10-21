@@ -192,7 +192,9 @@ with tab2:
                         st.info(f"**Name:** {selected_person.name} {selected_person.surname}")
                         st.info(f"**Geburtsdatum:** {selected_person.birthdate}")
                     with col2:
-                        st.info(f"**Alter:** {selected_person.eval_age()} Jahre")
+                        age = selected_person.eval_age()
+                        age_text = f"{age} Jahre" if age >= 0 else "Ungültiges Datum"
+                        st.info(f"**Alter:** {age_text}")
                         address = f"{selected_person.street or ''} {selected_person.housenr or ''}, {selected_person.zip or ''} {selected_person.place or ''}".strip()
                         st.info(f"**Adresse:** {address if address.replace(',', '').strip() else 'Nicht angegeben'}")
             

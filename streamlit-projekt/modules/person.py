@@ -187,12 +187,15 @@ class person:
         """
         Berechnet das Alter der Person anhand des Geburtsdatums
         Returns:
-            int: Alter der Person
+            int: Alter der Person, oder -1 wenn Datum ungültig
         """
-        geburtsdatum = dt.datetime.strptime(self.birthdate, "%d.%m.%Y")
-        heute = dt.datetime.today()
-        alter = heute.year - geburtsdatum.year - ((heute.month, heute.day) < (geburtsdatum.month, geburtsdatum.day))
-        return alter
+        try:
+            geburtsdatum = dt.datetime.strptime(self.birthdate, "%d.%m.%Y")
+            heute = dt.datetime.today()
+            alter = heute.year - geburtsdatum.year - ((heute.month, heute.day) < (geburtsdatum.month, geburtsdatum.day))
+            return alter
+        except (ValueError, AttributeError):
+            return -1
 
     def insert(self, db_ms: dbms.dbms):
         """

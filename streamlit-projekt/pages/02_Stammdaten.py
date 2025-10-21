@@ -255,6 +255,21 @@ with tab3:
                         with col3:
                             edit_ort = st.text_input("Ort", value=selected_person.place or "")
                         
+                        st.markdown("**Weitere Daten (Optional)**")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            edit_geschlecht = st.selectbox("Geschlecht", 
+                                                          options=["", "m", "w", "d"], 
+                                                          index=["", "m", "w", "d"].index(selected_person.sex) if selected_person.sex in ["", "m", "w", "d"] else 0,
+                                                          help="m=männlich, w=weiblich, d=divers")
+                        
+                        with col2:
+                            edit_kinder = st.number_input("Anzahl Kinder", 
+                                                         min_value=0, 
+                                                         max_value=20, 
+                                                         value=selected_person.children if selected_person.children else 0)
+                        
                         update_submitted = st.form_submit_button("💾 Änderungen speichern", type="primary")
                         
                         if update_submitted:
@@ -277,16 +292,20 @@ with tab3:
                                     
                                     geb_str = edit_geburtsdatum.strftime("%d.%m.%Y")
                                     
+                                    # WICHTIG: Values müssen alle Felder aus table_row_names enthalten!
                                     values = [
-                                        selected_person.obj_id,
-                                        edit_nachname.strip(),
-                                        edit_vorname.strip(),
-                                        geb_str,
-                                        edit_straße.strip() if edit_straße else None,
-                                        edit_hausnr_int,
-                                        edit_stiege.strip() if edit_stiege else None,
-                                        int(edit_plz) if edit_plz else None,
-                                        edit_ort.strip() if edit_ort else None
+                                        selected_person.obj_id,              # PERS_ID
+                                        edit_nachname.strip(),               # PERS_SURNAME
+                                        edit_vorname.strip(),                # PERS_FIRSTNAME
+                                        geb_str,                             # PERS_BIRTHDATE
+                                        edit_straße.strip() if edit_straße else None,  # PERS_STREET
+                                        edit_hausnr_int,                     # PERS_HOUSENR
+                                        edit_stiege.strip() if edit_stiege else None,  # PERS_FLOOR
+                                        int(edit_plz) if edit_plz else None, # PERS_ZIP
+                                        edit_ort.strip() if edit_ort else None,        # PERS_PLACE
+                                        selected_person.rec_id,              # PERS_REC_ID (Primary Key - nicht änderbar)
+                                        edit_geschlecht if edit_geschlecht else None,  # PERS_SEX
+                                        int(edit_kinder) if edit_kinder else 0        # PERS_CHILDREN
                                     ]
                                     
                                     selected_person.update(db, values)

@@ -15,7 +15,7 @@ def str_to_float(value, default=0.0):
     except (ValueError, AttributeError):
         return default
 
-# Professionelles Stammdatenblatt - VOLLSTÄNDIGE A4-NUTZUNG
+# Professionelles Stammdatenblatt - VOLLSTÄNDIGE A4-NUTZUNG 
 def generate_stammdatenblatt_pdf(person_obj):
     """
     Generiert ein vollständiges, professionelles Stammdatenblatt im BMD-Stil.
@@ -84,7 +84,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     
     for i, (label1, value1, label2, value2) in enumerate(person_data):
         fill = (i % 2 == 0)
-        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        if fill:
+            pdf.set_fill_color(*COLOR_LIGHT_BG)
+        else:
+            pdf.set_fill_color(255, 255, 255)
         
         pdf.set_xy(10, y_pos)
         pdf.set_font("Arial", 'B', 9)
@@ -118,7 +121,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     
     for i, (label1, value1, label2, value2) in enumerate(address_data):
         fill = (i % 2 == 0)
-        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        if fill:
+            pdf.set_fill_color(*COLOR_LIGHT_BG)
+        else:
+            pdf.set_fill_color(255, 255, 255)
         
         pdf.set_xy(10, y_pos)
         pdf.set_font("Arial", 'B', 9)
@@ -152,7 +158,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     
     for i, (label1, value1, label2, value2) in enumerate(employment_data):
         fill = (i % 2 == 0)
-        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        if fill:
+            pdf.set_fill_color(*COLOR_LIGHT_BG)
+        else:
+            pdf.set_fill_color(255, 255, 255)
         
         pdf.set_xy(10, y_pos)
         pdf.set_font("Arial", 'B', 9)
@@ -184,7 +193,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     
     for i, (label1, value1, label2, value2) in enumerate(bank_data):
         fill = (i % 2 == 0)
-        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        if fill:
+            pdf.set_fill_color(*COLOR_LIGHT_BG)
+        else:
+            pdf.set_fill_color(255, 255, 255)
         
         pdf.set_xy(10, y_pos)
         pdf.set_font("Arial", 'B', 9)
@@ -217,7 +229,10 @@ def generate_stammdatenblatt_pdf(person_obj):
     
     for i, (label1, value1, label2, value2) in enumerate(tax_data):
         fill = (i % 2 == 0)
-        pdf.set_fill_color(*COLOR_LIGHT_BG) if fill else pdf.set_fill_color(255, 255, 255)
+        if fill:
+            pdf.set_fill_color(*COLOR_LIGHT_BG)
+        else:
+            pdf.set_fill_color(255, 255, 255)
         
         pdf.set_xy(10, y_pos)
         pdf.set_font("Arial", 'B', 9)
@@ -491,7 +506,54 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf.set_xy(10, y_table)
     pdf.cell(col_widths[0] + col_widths[1] + col_widths[2], 10, "AUSZAHLUNGSBETRAG (NETTO)", border=1, fill=True, align='R')
     pdf.cell(col_widths[3], 10, f"{netto:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R', fill=True)
-    y_table += 12
+    y_table += 14
+    
+    # === STEUERLICHE VORTEILE & KINDERBEZUG ===
+    if y_table < 230:  # Nur wenn noch Platz ist
+        pdf.set_text_color(*COLOR_TEXT_DARK)
+        pdf.set_font("Arial", 'B', 9)
+        pdf.set_fill_color(*COLOR_GRAY_LIGHT)
+        pdf.set_xy(10, y_table)
+        pdf.cell(190, 6, "STEUERLICHE VORTEILE & KINDERBEZUG", border=1, fill=True)
+        y_table += 6
+        
+        pdf.set_font("Arial", '', 8)
+        
+        # Freibetragsbescheid
+        freibetrag = abrechnung_data.get("freibetrag", 0) if abrechnung_data and isinstance(abrechnung_data, dict) else 0
+        pdf.set_xy(10, y_table)
+        pdf.cell(95, 5, f"  Freibetragsbescheid:", border=1)
+        pdf.cell(95, 5, f"{freibetrag:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+        y_table += 5
+        
+        # Pendlerpauschale
+        pendler = abrechnung_data.get("pendlerpauschale", 0) if abrechnung_data and isinstance(abrechnung_data, dict) else 0
+        pdf.set_xy(10, y_table)
+        pdf.cell(95, 5, f"  Pendlerpauschale:", border=1)
+        pdf.cell(95, 5, f"{pendler:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+        y_table += 5
+        
+        # Pendlereuro
+        pendler_euro = abrechnung_data.get("pendlereuro", 0) if abrechnung_data and isinstance(abrechnung_data, dict) else 0
+        pdf.set_xy(10, y_table)
+        pdf.cell(95, 5, f"  Pendlereuro:", border=1)
+        pdf.cell(95, 5, f"{pendler_euro:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", "."), border=1, align='R')
+        y_table += 5
+        
+        # Anzahl Kinder (AVAB)
+        kinder = abrechnung_data.get("anzahl_kinder_avab", 0) if abrechnung_data and isinstance(abrechnung_data, dict) else 0
+        pdf.set_xy(10, y_table)
+        pdf.cell(95, 5, f"  Anzahl Kinder (AVAB):", border=1)
+        pdf.cell(95, 5, f"{kinder} Kinder", border=1, align='R')
+        y_table += 5
+        
+        # Alleinverdiener/Alleinerzieher
+        fabo = abrechnung_data.get("anspruch_fabo", 0) if abrechnung_data and isinstance(abrechnung_data, dict) else 0
+        fabo_text = "Ja" if fabo else "Nein"
+        pdf.set_xy(10, y_table)
+        pdf.cell(95, 5, f"  Alleinverdiener/Alleinerzieher:", border=1)
+        pdf.cell(95, 5, fabo_text, border=1, align='R')
+        y_table += 7
     
     # === ZUSATZINFORMATIONEN ===
     if y_table < 250:
@@ -847,7 +909,7 @@ else:
                     
                     employee_obj = EmployeeMock(selected_employee)
                     
-                    # Erstelle Abrechnungsdaten
+                    # Erstelle Abrechnungsdaten mit steuerlichen Vorteilen
                     abrechnung_data = {
                         "SV": calc_values['sv'],
                         "Lohnsteuer": calc_values['lohnsteuer'],
@@ -855,7 +917,13 @@ else:
                         "sonderzahlungen": str_to_float(payroll_data.get('lv_dn_sonderzahlungen', 0), 0.0),
                         "mehrstunden25": str_to_float(payroll_data.get('lv_dn_mehrstunden25', 0), 0.0),
                         "überstunden50": str_to_float(payroll_data.get('lv_dn_ueberstunden50', 0), 0.0),
-                        "zulagen": 0.0
+                        "zulagen": 0.0,
+                        # Steuerliche Vorteile hinzufügen
+                        "freibetrag": tax_benefits.get('freibetrag', 0),
+                        "pendlerpauschale": tax_benefits.get('pendlerpauschale', 0),
+                        "pendlereuro": tax_benefits.get('pendlereuro', 0),
+                        "anzahl_kinder_avab": tax_benefits.get('anzahl_kinder_avab', 0),
+                        "anspruch_fabo": tax_benefits.get('anspruch_fabo', 0),
                     }
                     
                     # Generiere PDF mit berechneten Werten
