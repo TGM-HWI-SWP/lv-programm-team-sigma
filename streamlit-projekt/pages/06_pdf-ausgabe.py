@@ -582,12 +582,14 @@ def generate_payroll_pdf(employee_name, amount):
 # ===========================
 import sqlite3
 from pathlib import Path
+from modules import Abrechnung
+import re
 
 st.set_page_config(page_title="PDF-Ausgabe", page_icon="📄", layout="wide")
 st.title("📄 PDF Ausgabe")
 
 # Datenbank-Verbindung
-DB_PATH = (Path(__file__).parent.parent.parent / "Stammdaten-Projekt" / "stammdatenverwaltung.db").resolve()
+DB_PATH = (Path(__file__).parent.parent / "stammdatenverwaltung.db").resolve()
 
 def load_employees_with_persons():
     """Lädt Mitarbeiter mit zugehörigen Personendaten"""
@@ -612,6 +614,133 @@ def load_employees_with_persons():
         return []
     finally:
         conn.close()
+
+def load_latest_payroll(empl_id):
+    """Lädt die neueste Lohnabrechnung für einen Mitarbeiter"""
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute("""
+            SELECT 
+                lv_dn_id, lv_dn_monat, lv_dn_stundensatz, lv_dn_wochenstunden, lv_dn_brutto,
+                lv_dn_mehrstunden0, lv_dn_mehrstunden25, lv_dn_mehrstunden50, 
+                lv_dn_ueberstunden50, lv_dn_ueberstunden100,
+                lv_dn_sonderzahlungen, lv_dn_sachbezug, lv_dn_diäten, lv_dn_reisekosten,
+                lv_dn_jahressechstel
+            FROM lohnverrechnung_dn
+            WHERE lv_dn_empl_id = ?
+            ORDER BY lv_dn_monat DESC
+            LIMIT 1
+        """, (empl_id,)).fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        st.error(f"Fehler beim Laden der Lohnabrechnung: {e}")
+        return None
+    finally:
+        conn.close()
+
+def load_tax_benefits(empl_id):
+    """Lädt steuerliche Vorteile für einen Mitarbeiter (gleiche Struktur wie payroll.py)"""
+    conn = sqlite3.connect(str(DB_PATH))
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            SELECT stv_freibetrag, stv_pendlerpauschale, stv_pendlereuro, 
+                   stv_anzahl_kinder_avab, stv_anspruch_fabo, stv_gewerkschaft
+            FROM steuerliche_vorteile
+            WHERE stv_empl_id = ?
+        ''', (empl_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            return {
+                'freibetrag': result[0] or 0,
+                'pendlerpauschale': result[1] or 0,
+                'pendlereuro': result[2] or 0,
+                'anzahl_kinder_avab': result[3] or 0,
+                'anspruch_fabo': result[4] or 0,
+                'gewerkschaft': result[5] or 0
+            }
+        return {
+            'freibetrag': 0,
+            'pendlerpauschale': 0,
+            'pendlereuro': 0,
+            'anzahl_kinder_avab': 0,
+            'anspruch_fabo': 0,
+            'gewerkschaft': 0
+        }
+    finally:
+        conn.close()
+
+def calculate_payroll_values(payroll_data, tax_benefits):
+    """
+    Berechnet SV, Lohnsteuer und Netto mit dem Abrechnung-Modul
+    (EXAKT gleiche Berechnung wie auf der Lohnverrechnung-Seite)
+    """
+    monat_str = payroll_data['lv_dn_monat']
+    jahr = int(monat_str.split('-')[0])
+    monat = int(monat_str.split('-')[1])
+    
+    # Führe Berechnung durch - EXAKT wie in 04_Lohnverrechnung.py
+    calc_result = Abrechnung.calc_brutto2netto(
+        monat=monat,
+        jahr=jahr,
+        stundensatz=float(payroll_data.get('lv_dn_stundensatz', 20.0) or 20.0),
+        brutto=float(payroll_data.get('lv_dn_brutto', 0) or 0),
+        mehrstunden0=float(payroll_data.get('lv_dn_mehrstunden0', 0) or 0),
+        mehrstunden25=float(payroll_data.get('lv_dn_mehrstunden25', 0) or 0),
+        mehrstunden50=float(payroll_data.get('lv_dn_mehrstunden50', 0) or 0),
+        überstunden50=float(payroll_data.get('lv_dn_ueberstunden50', 0) or 0),
+        überstunden100=float(payroll_data.get('lv_dn_ueberstunden100', 0) or 0),
+        sonderzahlungen=float(payroll_data.get('lv_dn_sonderzahlungen', 0) or 0),
+        sachbezug=float(payroll_data.get('lv_dn_sachbezug', 0) or 0),
+        diäten=float(payroll_data.get('lv_dn_diäten', 0) or 0),
+        reisekosten=float(payroll_data.get('lv_dn_reisekosten', 0) or 0),
+        freibetragsbescheid=float(tax_benefits.get('freibetrag', 0)),
+        pendlerpauschale=float(tax_benefits.get('pendlerpauschale', 0)),
+        pendlereuro=float(tax_benefits.get('pendlereuro', 0)),
+        anzahl_Kinder_AVAB=int(tax_benefits.get('anzahl_kinder_avab', 0)),
+        anspruch_fabo=bool(tax_benefits.get('anspruch_fabo', 0)),
+        gewerkschaftmitglied=bool(tax_benefits.get('gewerkschaft', 0)),
+        jahressechstel=float(payroll_data.get('lv_dn_jahressechstel', 0) or 0)
+    )
+    
+    # Parse Ergebnis
+    brutto = float(payroll_data.get('lv_dn_brutto', 0) or 0)
+    sv = 0.0
+    lohnsteuer = 0.0
+    netto = 0.0
+    gewerkschaft = 0.0
+    
+    lines = calc_result.strip().split('\n')
+    for line in lines:
+        if 'SV lfd:' in line:
+            parts = line.split('SV lfd:')
+            if len(parts) > 1:
+                sv_str = parts[1].strip().replace('€', '').strip()
+                sv = float(sv_str)
+        elif 'Lohnsteuer:' in line and 'Lst_Bmg' in line:
+            parts = line.split('Lohnsteuer:')
+            if len(parts) > 1:
+                lst_str = parts[1].strip().replace('€', '').strip()
+                lohnsteuer = float(lst_str)
+        elif 'Nettolohn' in line and 'ist:' in line:
+            parts = line.split('ist:')
+            if len(parts) > 1:
+                netto_str = parts[1].strip().replace('€', '').strip()
+                netto = float(netto_str)
+        elif 'ÖGB' in line:
+            numbers = re.findall(r'\d+\.?\d*', line)
+            if numbers:
+                gewerkschaft = float(numbers[0])
+    
+    return {
+        'brutto': brutto,
+        'sv': sv,
+        'lohnsteuer': lohnsteuer,
+        'netto': netto,
+        'gewerkschaft': gewerkschaft
+    }
 
 # Daten laden
 employees = load_employees_with_persons()
@@ -689,41 +818,69 @@ else:
         st.write("Erstellt einen Lohnzettel mit Gehaltsabrechnung")
         
         if st.button("📄 Lohnzettel erstellen", key="lohnzettel_btn"):
-            class EmployeeMock:
-                def __init__(self, row):
-                    self.surname = row['PERS_SURNAME']
-                    self.name = row['PERS_FIRSTNAME']
-                    self.birthdate = row['PERS_BIRTHDATE'] or "-"
-                    self.entrydate = row['EMPL_ENTRYDATE'] or "-"
-                    self.street = row['PERS_STREET'] or ""
-                    self.housenr = row['PERS_HOUSENR'] or ""
-                    self.zip = row['PERS_ZIP'] or ""
-                    self.place = row['PERS_PLACE'] or ""
-                    self.obj_id = row['PERS_ID']
+            # Lade Lohnabrechnungsdaten aus der Datenbank
+            payroll_data = load_latest_payroll(selected_employee['EMPL_ID'])
             
-            employee_obj = EmployeeMock(selected_employee)
-            
-            # WICHTIG: Konvertiere Brutto sicher (kann String mit Komma sein!)
-            brutto = str_to_float(selected_employee['EMPL_BRUTTOGEHALT'], 0.0)
-            
-            # Berechne Abzüge (vereinfacht nach österreichischem System)
-            sv = round(brutto * 0.1807, 2)  # Sozialversicherung ~18%
-            tax = round(max(brutto - sv, 0) * 0.2, 2)  # Lohnsteuer ~20%
-            netto = round(brutto - sv - tax, 2)
-            
-            abrechnung_data = {
-                "SV": sv,
-                "Lohnsteuer": tax
-            }
-            
-            pdf_bytes = generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data)
-            st.download_button(
-                "⬇️ Download Lohnzettel.pdf",
-                data=pdf_bytes,
-                file_name=f"Lohnzettel_{selected_employee['PERS_SURNAME']}_{selected_employee['PERS_FIRSTNAME']}.pdf",
-                mime="application/pdf",
-                key="download_lohnzettel"
-            )
+            if not payroll_data:
+                st.warning("⚠️ Keine Lohnabrechnung für diesen Mitarbeiter gefunden!")
+                st.info("Bitte erstelle zunächst eine Lohnabrechnung über die Seite 'Lohn & Gehalt'.")
+            else:
+                try:
+                    # Lade steuerliche Vorteile (gibt immer ein dict zurück)
+                    tax_benefits = load_tax_benefits(selected_employee['EMPL_ID'])
+                    
+                    # Berechne mit Abrechnung-Modul (EXAKT gleiche Berechnung wie in 04_Lohnverrechnung.py)
+                    calc_values = calculate_payroll_values(payroll_data, tax_benefits)
+                    
+                    # Erstelle Employee-Mock-Objekt
+                    class EmployeeMock:
+                        def __init__(self, row):
+                            self.surname = row['PERS_SURNAME']
+                            self.name = row['PERS_FIRSTNAME']
+                            self.birthdate = row['PERS_BIRTHDATE'] or "-"
+                            self.entrydate = row['EMPL_ENTRYDATE'] or "-"
+                            self.street = row['PERS_STREET'] or ""
+                            self.housenr = row['PERS_HOUSENR'] or ""
+                            self.zip = row['PERS_ZIP'] or ""
+                            self.place = row['PERS_PLACE'] or ""
+                            self.obj_id = row['PERS_ID']
+                    
+                    employee_obj = EmployeeMock(selected_employee)
+                    
+                    # Erstelle Abrechnungsdaten
+                    abrechnung_data = {
+                        "SV": calc_values['sv'],
+                        "Lohnsteuer": calc_values['lohnsteuer'],
+                        "Gewerkschaft": calc_values['gewerkschaft'],
+                        "sonderzahlungen": str_to_float(payroll_data.get('lv_dn_sonderzahlungen', 0), 0.0),
+                        "mehrstunden25": str_to_float(payroll_data.get('lv_dn_mehrstunden25', 0), 0.0),
+                        "überstunden50": str_to_float(payroll_data.get('lv_dn_ueberstunden50', 0), 0.0),
+                        "zulagen": 0.0
+                    }
+                    
+                    # Generiere PDF mit berechneten Werten
+                    pdf_bytes = generate_real_payroll_pdf(
+                        employee_obj, 
+                        calc_values['brutto'], 
+                        calc_values['netto'], 
+                        abrechnung_data
+                    )
+                    
+                    st.success(f"✅ Lohnzettel generiert (Monat: {payroll_data['lv_dn_monat']})")
+                    st.info(f"💰 Brutto: {calc_values['brutto']:,.2f} € | Netto: {calc_values['netto']:,.2f} €")
+                    
+                    st.download_button(
+                        "⬇️ Download Lohnzettel.pdf",
+                        data=pdf_bytes,
+                        file_name=f"Lohnzettel_{selected_employee['PERS_SURNAME']}_{selected_employee['PERS_FIRSTNAME']}.pdf",
+                        mime="application/pdf",
+                        key="download_lohnzettel"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"❌ Fehler bei der PDF-Generierung: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
     
     st.divider()
     st.caption(f"📂 Datenbank: {DB_PATH}")

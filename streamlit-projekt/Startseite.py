@@ -172,4 +172,4 @@ with col4:
 st.divider()
 st.caption(f"Datenbankdatei: {DB_PATH}")
 st.caption("💡 Tipp: Verwende die Seitenleiste (links), um zu anderen Funktionen zu navigieren")
-st.caption("📄 Für PDF-Generierung (Stammdatenblätter & Lohnzettel) siehe Seite '07_📄pdf-ausgabe'")
+st.caption("📄 Für PDF-Generierung (Stammdatenblätter & Lohnzettel) siehe Seite '07_📄Pdf-Ausgabe'")
