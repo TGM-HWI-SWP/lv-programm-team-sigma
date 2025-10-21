@@ -68,19 +68,36 @@ with tab1:
     # Search and filter
     st.subheader("🔍 Suchen & Filtern")
     search_term = st.text_input("Suche nach Name", placeholder="Vorname oder Nachname eingeben...")
-    
+    # Neue Filter-Widgets
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        straße_filter = st.text_input("Straße filtern", value="")
+    with col2:
+        hausnr_filter = st.text_input("Hausnummer filtern", value="")
+    with col3:
+        plz_filter = st.text_input("PLZ filtern", value="")
+    with col4:
+        ort_filter = st.text_input("Ort filtern", value="")
+
     # Display table
     if personen:
         data = [p.value() for p in personen]
         columns = [row[2] for row in person.person.table_row_names]
         df = pd.DataFrame(data, columns=columns)
-        
         # Apply search filter
         if search_term:
             mask = (df['Vorname'].str.contains(search_term, case=False, na=False) | 
                    df['Nachname'].str.contains(search_term, case=False, na=False))
             df = df[mask]
-        
+        # Apply advanced filters
+        if straße_filter:
+            df = df[df['Straße'].str.contains(straße_filter, case=False, na=False)]
+        if hausnr_filter:
+            df = df[df['Hausnummer'].astype(str).str.contains(hausnr_filter, case=False, na=False)]
+        if plz_filter:
+            df = df[df['PLZ'].astype(str).str.contains(plz_filter, case=False, na=False)]
+        if ort_filter:
+            df = df[df['Ort'].str.contains(ort_filter, case=False, na=False)]
         # Enhanced table display
         if not df.empty:
             st.dataframe(
