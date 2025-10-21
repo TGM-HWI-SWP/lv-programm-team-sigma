@@ -49,7 +49,7 @@ def generate_stammdatenblatt_pdf(person_obj):
     
     pdf.set_font("Arial", '', 9)
     pdf.set_xy(10, 22)
-    pdf.cell(190, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True, align='C')
+    pdf.cell(190, 5, "Team Sigma GmbH | Wexstraße 19-23 | 1200 Wien", ln=True, align='C')
     pdf.set_xy(10, 28)
     pdf.cell(190, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True, align='C')
     
@@ -230,22 +230,23 @@ def generate_stammdatenblatt_pdf(person_obj):
         y_pos += 7
     
     # === SIGNATURFELD ===
-    # Verschiebe Unterschriften weiter nach unten für bessere Seitennutzung
-    y_pos = max(y_pos + 5, 255)  # Mindestens bei Y=255, oder tiefer falls mehr Inhalt
+    # WICHTIG: Maximal bis Y=250 um Platz für Fußzeile zu lassen
+    y_pos = min(max(y_pos + 5, 245), 250)  # Zwischen Y=245 und Y=250
     
     pdf.set_draw_color(*COLOR_BORDER)
-    pdf.rect(10, y_pos, 90, 20)
-    pdf.rect(110, y_pos, 90, 20)
+    pdf.rect(10, y_pos, 90, 18)
+    pdf.rect(110, y_pos, 90, 18)
     
     pdf.set_font("Arial", 'I', 8)
     pdf.set_text_color(150, 150, 150)
-    pdf.set_xy(10, y_pos + 15)
+    pdf.set_xy(10, y_pos + 13)
     pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
-    pdf.set_xy(110, y_pos + 15)
+    pdf.set_xy(110, y_pos + 13)
     pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
     
     # === FUßZEILE ===
-    pdf.set_y(285)
+    # Fest bei Y=280 um zweite Seite zu vermeiden
+    pdf.set_y(280)
     pdf.set_font("Arial", '', 7)
     pdf.set_text_color(120, 120, 120)
     pdf.cell(95, 3, "Team Sigma GmbH | UID: ATU12345678", align='L')
@@ -294,7 +295,7 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf.set_xy(15, 18)
     pdf.cell(0, 4, "Team Sigma GmbH", ln=True)
     pdf.set_xy(15, 23)
-    pdf.cell(0, 4, "Musterstraße 1 | 1010 Wien", ln=True)
+    pdf.cell(0, 4, "Wexstraße 19-23 | 1200 Wien", ln=True)
     pdf.set_xy(15, 28)
     pdf.cell(0, 4, "UID: ATU12345678", ln=True)
     
