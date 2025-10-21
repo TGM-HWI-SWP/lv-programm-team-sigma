@@ -584,7 +584,7 @@ import sqlite3
 from pathlib import Path
 
 st.set_page_config(page_title="PDF-Ausgabe", page_icon="📄", layout="wide")
-st.title("📄 PDF-Ausgabe")
+st.title("📄 PDF Ausgabe")
 
 # Datenbank-Verbindung
 DB_PATH = (Path(__file__).parent.parent.parent / "Stammdaten-Projekt" / "stammdatenverwaltung.db").resolve()
