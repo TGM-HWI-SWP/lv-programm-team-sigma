@@ -660,19 +660,20 @@ else:
         st.markdown("### Stammdatenblatt")
         st.write("Erstellt ein PDF mit allen Stammdaten des Mitarbeiters")
         
-        # Erstelle ein Mock-Objekt für die Funktion
-        class PersonMock:
-            def __init__(self, row):
-                self.surname = row['PERS_SURNAME']
-                self.name = row['PERS_FIRSTNAME']
-                self.birthdate = row['PERS_BIRTHDATE']
-                self.street = row['PERS_STREET']
-                self.housenr = row['PERS_HOUSENR']
-                self.zip = row['PERS_ZIP']
-                self.place = row['PERS_PLACE']
-                self.obj_id = row['PERS_ID']
-        
         if st.button("📄 Stammdatenblatt erstellen", key="stammdaten_btn"):
+            # Erstelle ein Mock-Objekt für die Funktion
+            class PersonMock:
+                def __init__(self, row):
+                    self.surname = row['PERS_SURNAME']
+                    self.name = row['PERS_FIRSTNAME']
+                    self.birthdate = row['PERS_BIRTHDATE'] or "-"
+                    self.street = row['PERS_STREET'] or ""
+                    self.housenr = row['PERS_HOUSENR'] or ""
+                    self.zip = row['PERS_ZIP'] or ""
+                    self.place = row['PERS_PLACE'] or ""
+                    self.obj_id = row['PERS_ID']
+                    self.entrydate = row['EMPL_ENTRYDATE'] or "-"
+            
             person_obj = PersonMock(selected_employee)
             pdf_bytes = generate_stammdatenblatt_pdf(person_obj)
             st.download_button(
@@ -687,18 +688,19 @@ else:
         st.markdown("### Lohnzettel")
         st.write("Erstellt einen Lohnzettel mit Gehaltsabrechnung")
         
-        class EmployeeMock:
-            def __init__(self, row):
-                self.surname = row['PERS_SURNAME']
-                self.name = row['PERS_FIRSTNAME']
-                self.birthdate = row['PERS_BIRTHDATE']
-                self.entrydate = row['EMPL_ENTRYDATE']
-                self.street = row['PERS_STREET']
-                self.housenr = row['PERS_HOUSENR']
-                self.zip = row['PERS_ZIP']
-                self.place = row['PERS_PLACE']
-        
         if st.button("📄 Lohnzettel erstellen", key="lohnzettel_btn"):
+            class EmployeeMock:
+                def __init__(self, row):
+                    self.surname = row['PERS_SURNAME']
+                    self.name = row['PERS_FIRSTNAME']
+                    self.birthdate = row['PERS_BIRTHDATE'] or "-"
+                    self.entrydate = row['EMPL_ENTRYDATE'] or "-"
+                    self.street = row['PERS_STREET'] or ""
+                    self.housenr = row['PERS_HOUSENR'] or ""
+                    self.zip = row['PERS_ZIP'] or ""
+                    self.place = row['PERS_PLACE'] or ""
+                    self.obj_id = row['PERS_ID']
+            
             employee_obj = EmployeeMock(selected_employee)
             
             # WICHTIG: Konvertiere Brutto sicher (kann String mit Komma sein!)
