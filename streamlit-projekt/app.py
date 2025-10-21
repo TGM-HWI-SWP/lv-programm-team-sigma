@@ -148,26 +148,19 @@ def pdf_stammdatenblatt(person_like_row):
     COLOR_TEXT = (44, 62, 80)
     COLOR_BORDER = (189, 195, 199)
     
-    # Kopfzeile mit Logo-Bereich
+    # Kopfzeile
     pdf.set_fill_color(*COLOR_HEADER)
     pdf.rect(0, 0, 210, 40, 'F')
     
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(15, 8, 25, 25, 'D')
-    pdf.set_font("Arial", 'B', 8)
-    pdf.set_text_color(*COLOR_HEADER)
-    pdf.set_xy(15, 18)
-    pdf.cell(25, 5, "LOGO", align='C')
-    
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
-    pdf.set_xy(45, 10)
-    pdf.cell(0, 10, "STAMMDATENBLATT", ln=True)
+    pdf.set_xy(10, 10)
+    pdf.cell(190, 10, "STAMMDATENBLATT", ln=True, align='C')
     pdf.set_font("Arial", '', 9)
-    pdf.set_xy(45, 22)
-    pdf.cell(0, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True)
-    pdf.set_xy(45, 28)
-    pdf.cell(0, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True)
+    pdf.set_xy(10, 22)
+    pdf.cell(190, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True, align='C')
+    pdf.set_xy(10, 28)
+    pdf.cell(190, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True, align='C')
     
     # Name hervorgehoben
     y_pos = 50
@@ -300,6 +293,21 @@ def pdf_stammdatenblatt(person_like_row):
         pdf.cell(50, 7, v2, border=1, fill=fill)
         y_pos += 7
     
+    # === SIGNATURFELD ===
+    # Verschiebe Unterschriften weiter nach unten für bessere Seitennutzung
+    y_pos = max(y_pos + 5, 255)  # Mindestens bei Y=255, oder tiefer falls mehr Inhalt
+    
+    pdf.set_draw_color(*COLOR_BORDER)
+    pdf.rect(10, y_pos, 90, 20)
+    pdf.rect(110, y_pos, 90, 20)
+    
+    pdf.set_font("Arial", 'I', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.set_xy(10, y_pos + 15)
+    pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
+    pdf.set_xy(110, y_pos + 15)
+    pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
+    
     # Fußzeile
     pdf.set_y(285)
     pdf.set_font("Arial", '', 7)
@@ -326,27 +334,19 @@ def pdf_lohnzettel(employee_row, payroll_data):
     pdf.set_fill_color(*COLOR_HEADER)
     pdf.rect(0, 0, 210, 45, 'F')
     
-    # Logo-Platzhalter
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(15, 8, 25, 25, 'D')
-    pdf.set_font("Arial", 'B', 8)
-    pdf.set_text_color(*COLOR_HEADER)
-    pdf.set_xy(15, 18)
-    pdf.cell(25, 5, "LOGO", align='C')
-    
     # Firmendaten
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 18)
-    pdf.set_xy(45, 8)
+    pdf.set_xy(15, 8)
     pdf.cell(0, 8, "LOHNZETTEL", ln=True)
     pdf.set_font("Arial", '', 9)
-    pdf.set_xy(45, 18)
+    pdf.set_xy(15, 18)
     pdf.cell(0, 4, "Team Sigma GmbH", ln=True)
-    pdf.set_xy(45, 23)
+    pdf.set_xy(15, 23)
     pdf.cell(0, 4, "Musterstraße 1 | 1010 Wien", ln=True)
-    pdf.set_xy(45, 28)
+    pdf.set_xy(15, 28)
     pdf.cell(0, 4, "Tel: +43 1 234 5678 | office@team-sigma.at", ln=True)
-    pdf.set_xy(45, 33)
+    pdf.set_xy(15, 33)
     pdf.cell(0, 4, "UID: ATU12345678", ln=True)
     
     # Mitarbeiterdaten - kompakt (3 Zeilen, jeweils 2 Spalten)
@@ -357,7 +357,7 @@ def pdf_lohnzettel(employee_row, payroll_data):
     pdf.set_font("Arial", 'B', 9)
     
     name = f"{employee_row['PERS_SURNAME']} {employee_row['PERS_FIRSTNAME']}"
-    entry = employee_row.get('EMPL_ENTRYDATE', '')
+    entry = employee_row['EMPL_ENTRYDATE'] if 'EMPL_ENTRYDATE' in employee_row.keys() else ''
     
     # Zeile 1
     pdf.set_xy(12, y_pos + 2)
@@ -368,7 +368,8 @@ def pdf_lohnzettel(employee_row, payroll_data):
     pdf.set_x(125)
     pdf.cell(30, 5, "Personen-ID:", ln=False)
     pdf.set_font("Arial", '', 9)
-    pdf.cell(0, 5, str(employee_row.get('PERS_ID', '')))
+    pers_id = str(employee_row['PERS_ID']) if 'PERS_ID' in employee_row.keys() else ''
+    pdf.cell(0, 5, pers_id)
     
     # Zeile 2
     pdf.set_xy(12, y_pos + 9)
@@ -419,7 +420,8 @@ def pdf_lohnzettel(employee_row, payroll_data):
     # Daten holen
     brutto = payroll_data.get("brutto")
     if brutto is None:
-        brutto = str_to_float(employee_row.get("EMPL_BRUTTOGEHALT"), 0.0)
+        brutto_val = employee_row["EMPL_BRUTTOGEHALT"] if "EMPL_BRUTTOGEHALT" in employee_row.keys() else 0
+        brutto = str_to_float(brutto_val, 0.0)
     
     brutto_items = [
         ("Grundgehalt", "1,00", "100,00%", brutto),

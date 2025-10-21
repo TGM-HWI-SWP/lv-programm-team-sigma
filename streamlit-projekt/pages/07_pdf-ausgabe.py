@@ -41,25 +41,17 @@ def generate_stammdatenblatt_pdf(person_obj):
     pdf.set_fill_color(*COLOR_HEADER)
     pdf.rect(0, 0, 210, 40, 'F')
     
-    # Logo-Bereich (Platzhalter)
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(15, 8, 25, 25, 'D')  # Weißes Quadrat für Logo
-    pdf.set_font("Arial", 'B', 8)
-    pdf.set_text_color(*COLOR_HEADER)
-    pdf.set_xy(15, 18)
-    pdf.cell(25, 5, "LOGO", align='C')
-    
-    # Firmenname und Titel
+    # Firmenname und Titel - ZENTRIERT
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
-    pdf.set_xy(45, 10)
-    pdf.cell(0, 10, "STAMMDATENBLATT", ln=True)
+    pdf.set_xy(10, 10)
+    pdf.cell(190, 10, "STAMMDATENBLATT", ln=True, align='C')
     
     pdf.set_font("Arial", '', 9)
-    pdf.set_xy(45, 22)
-    pdf.cell(0, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True)
-    pdf.set_xy(45, 28)
-    pdf.cell(0, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True)
+    pdf.set_xy(10, 22)
+    pdf.cell(190, 5, "Team Sigma GmbH | Musterstraße 1 | 1010 Wien", ln=True, align='C')
+    pdf.set_xy(10, 28)
+    pdf.cell(190, 5, f"Erstellt am: {datetime.date.today().strftime('%d.%m.%Y')}", ln=True, align='C')
     
     # === MITARBEITER-ÜBERSCHRIFT ===
     y_pos = 50
@@ -237,19 +229,20 @@ def generate_stammdatenblatt_pdf(person_obj):
         pdf.cell(50, 7, value2, border=1, fill=fill)
         y_pos += 7
     
-    # === SIGNATURFELD (falls Platz) ===
-    if y_pos < 260:
-        y_pos += 5
-        pdf.set_draw_color(*COLOR_BORDER)
-        pdf.rect(10, y_pos, 90, 20)
-        pdf.rect(110, y_pos, 90, 20)
-        
-        pdf.set_font("Arial", 'I', 8)
-        pdf.set_text_color(150, 150, 150)
-        pdf.set_xy(10, y_pos + 15)
-        pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
-        pdf.set_xy(110, y_pos + 15)
-        pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
+    # === SIGNATURFELD ===
+    # Verschiebe Unterschriften weiter nach unten für bessere Seitennutzung
+    y_pos = max(y_pos + 5, 255)  # Mindestens bei Y=255, oder tiefer falls mehr Inhalt
+    
+    pdf.set_draw_color(*COLOR_BORDER)
+    pdf.rect(10, y_pos, 90, 20)
+    pdf.rect(110, y_pos, 90, 20)
+    
+    pdf.set_font("Arial", 'I', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.set_xy(10, y_pos + 15)
+    pdf.cell(90, 5, "Unterschrift Mitarbeiter", align='C')
+    pdf.set_xy(110, y_pos + 15)
+    pdf.cell(90, 5, "Unterschrift Geschäftsführung", align='C')
     
     # === FUßZEILE ===
     pdf.set_y(285)
@@ -291,31 +284,23 @@ def generate_real_payroll_pdf(employee_obj, brutto, netto, abrechnung_data=None)
     pdf.set_fill_color(*COLOR_HEADER_BG)
     pdf.rect(0, 0, 210, 45, 'F')
     
-    # Logo-Bereich
-    pdf.set_fill_color(255, 255, 255)
-    pdf.rect(15, 8, 25, 25, 'D')
-    pdf.set_font("Arial", 'B', 8)
-    pdf.set_text_color(*COLOR_HEADER_BG)
-    pdf.set_xy(15, 18)
-    pdf.cell(25, 5, "LOGO", align='C')
-    
     # Firmentitel
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 18)
-    pdf.set_xy(45, 8)
+    pdf.set_xy(15, 8)
     pdf.cell(0, 8, "Lohn- und Gehaltsabrechnung", ln=True)
     
     pdf.set_font("Arial", '', 9)
-    pdf.set_xy(45, 18)
+    pdf.set_xy(15, 18)
     pdf.cell(0, 4, "Team Sigma GmbH", ln=True)
-    pdf.set_xy(45, 23)
+    pdf.set_xy(15, 23)
     pdf.cell(0, 4, "Musterstraße 1 | 1010 Wien", ln=True)
-    pdf.set_xy(45, 28)
+    pdf.set_xy(15, 28)
     pdf.cell(0, 4, "UID: ATU12345678", ln=True)
     
     # Abrechnungsmonat
     pdf.set_font("Arial", 'B', 10)
-    pdf.set_xy(45, 35)
+    pdf.set_xy(15, 35)
     month_year = datetime.date.today().strftime('%B %Y')
     pdf.cell(0, 5, f"Abrechnungsmonat: {month_year}", ln=True)
     
@@ -656,9 +641,11 @@ else:
     with col1:
         st.metric("Name", f"{selected_employee['PERS_SURNAME']} {selected_employee['PERS_FIRSTNAME']}")
     with col2:
-        st.metric("Geburtsdatum", selected_employee['PERS_BIRTHDATE'])
+        birthdate = selected_employee['PERS_BIRTHDATE'] or "-"
+        st.metric("Geburtsdatum", birthdate)
     with col3:
-        st.metric("Eintrittsdatum", selected_employee['EMPL_ENTRYDATE'])
+        entrydate = selected_employee['EMPL_ENTRYDATE'] or "-"
+        st.metric("Eintrittsdatum", entrydate)
     
     # PDF-Generierung
     st.divider()
@@ -732,8 +719,9 @@ else:
                 mime="application/pdf",
                 key="download_lohnzettel"
             )
+    
+    st.divider()
+    st.caption(f"📂 Datenbank: {DB_PATH}")
+    st.caption(f"📊 Status: {len(employees)} Mitarbeiter verfügbar")
 
-st.divider()
-st.caption(f"📂 Datenbank: {DB_PATH}")
-st.caption(f"📊 Status: {len(employees)} Mitarbeiter verfügbar")
 
