@@ -12,9 +12,8 @@ Moderne Webanwendung zur Verwaltung von Stammdaten, Mitarbeitern und Lohnverrech
 
 ## 📦 Installation
 
-### 1. Repository klonen
-```bash
-git clone <repository-url>
+Kurzfassung (falls Umgebung bereits steht):
+```powershell
 cd streamlit-projekt
 ```
 
@@ -33,10 +32,9 @@ pip install -r requirements.txt
 
 ### Anwendung starten
 ```powershell
-streamlit run app.py
+streamlit run Startseite.py
 ```
-
-Die Anwendung öffnet sich automatisch im Browser unter `http://localhost:8501`
+Die App öffnet sich unter `http://localhost:8501`.
 
 ### Seitenübersicht
 
@@ -73,24 +71,28 @@ Die Anwendung öffnet sich automatisch im Browser unter `http://localhost:8501`
 
 ```
 streamlit-projekt/
-├── app.py                      # Hauptanwendung
-├── requirements.txt            # Python-Abhängigkeiten
-├── stammdatenverwaltung.db    # SQLite-Datenbank
+├── Startseite.py                # App-Einstieg
+├── requirements.txt             # Abhängigkeiten
+├── stammdatenverwaltung.db      # SQLite-Datenbank
 ├── .streamlit/
-│   └── config.toml            # Streamlit-Konfiguration
+│   └── config.toml              # Streamlit-Konfiguration
 ├── modules/
 │   ├── __init__.py
-│   ├── dbms.py                # Datenbankmanagement
-│   ├── person.py              # Personen-Model
-│   ├── employee.py            # Mitarbeiter-Model
-│   └── Abrechnung.py          # Lohnverrechnung
+│   ├── Abrechnung.py            # Lohnverrechnung / B2N-Logik
+│   ├── auth.py                  # Login/Session
+│   ├── dbms.py                  # DB-Access-Layer
+│   ├── employee.py              # Mitarbeiter-Modell
+│   ├── hashing.py               # Passwort-Hashing
+│   ├── payroll.py               # Payroll-Orchestrierung
+│   └── person.py                # Personen-Modell
 ├── pages/
-│   ├── 01_ _Analyse.py
-│   ├── 02_ _Einstellungen.py
-│   ├── 03_Stammdaten.py
-│   ├── 04_Mitarbeiter.py
-│   ├── 05_Lohnverrechnung.py
-│   └── 06_Extras.py
+│   ├── 01_Analyse.py
+│   ├── 02_Stammdaten.py
+│   ├── 03_Mitarbeiter.py
+│   ├── 04_Lohnverrechnung.py
+│   ├── 05_Extras.py
+│   ├── 06_Pdf-Ausgabe.py
+│   └── 07_Einstellungen.py
 └── data/
     └── .gitkeep
 ```
@@ -103,20 +105,16 @@ streamlit-projekt/
 - **Plotly**: Interaktive Visualisierungen
 - **Python 3.11+**: Programmiersprache
 
-## 📝 Datenbank-Schema
+## 📝 Datenbank-Schema (Kurz)
 
-### Tabelle: PERSON
-- PERS_ID (Primary Key)
-- PERS_SURNAME, PERS_FIRSTNAME
-- PERS_BIRTHDATE
-- PERS_STREET, PERS_HOUSENR, PERS_FLOOR
-- PERS_ZIP, PERS_PLACE
+### Tabelle: PERSON (Auszug)
+- PERS_ID (PK), PERS_SURNAME, PERS_FIRSTNAME, PERS_BIRTHDATE, Adresse…
+- PERS_VALID_FROM, PERS_VALID_TO (für Historisierung)
 
-### Tabelle: MITARBEITER
-- EMPL_ID (Primary Key)
-- PERS_ID (Foreign Key → PERSON)
-- EMPL_ENTRYDATE
-- EMPL_BRUTTOGEHALT
+### Tabelle: MITARBEITER (Auszug)
+- EMPL_ID (PK), PERS_ID (FK → PERSON), EMPL_ENTRYDATE, EMPL_BRUTTOGEHALT, EMPL_EXITDATE
+- EMPL_VALID_FROM, EMPL_VALID_TO (für Historisierung)
+
 
 ## 🛠️ Entwicklung
 
